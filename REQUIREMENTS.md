@@ -158,7 +158,7 @@ erDiagram
 
     ProductAvailabilitySummary {
         uuid id PK
-        uuid product_id FK UK
+        uuid product_id FK "UK"
         boolean is_available_now
         datetime next_window_start
         datetime next_window_end
