@@ -60,6 +60,16 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [ ] Build customer address book management UI (add, edit, select default)
   - [ ] Implement auth state management (JWT cookies + user context)
 
+- [ ] **TASK-106**: Wishlist & Saved Products System
+  - [ ] Create `SavedProduct` model with unique constraint (`customer_id`, `product_id`)
+  - [ ] Implement toggle bookmark API `POST /api/v1/customer/wishlist/{product_id}`
+  - [ ] Build client wishlist page with 1-click move-to-cart
+
+- [ ] **TASK-107**: Support Ticket & Order Inquiry System
+  - [ ] Create `Ticket` and `TicketMessage` models (supporting optional order reference)
+  - [ ] Implement ticket creation and messaging endpoints `POST /api/v1/tickets`
+  - [ ] Build client ticket management and chat thread view
+
 ---
 
 ## Phase 2: Product Catalog & Advanced Business Rules Engine
@@ -92,6 +102,16 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [ ] Product listing page with category filters, price range, and search
   - [ ] Product detail page with dynamic specification table and availability badge
 
+- [ ] **TASK-207**: Product Ratings & Reviews Engine
+  - [ ] Create `ProductReview` model (1 to 5 rating, title, body, `is_verified_purchase` badge, `PENDING` approval status)
+  - [ ] Implement submission endpoint `POST /api/v1/products/{id}/reviews` (auto-checks order history for verified badge)
+  - [ ] Build client review submission form and star rating display breakdown
+
+- [ ] **TASK-208**: Back-in-Stock & Price-Drop Subscriptions
+  - [ ] Create `ProductSubscription` model (`BACK_IN_STOCK | PRICE_DROP`)
+  - [ ] Implement subscribe/unsubscribe toggle endpoint `POST /api/v1/products/{id}/subscribe`
+  - [ ] Build client notification alert bell toggle on product detail page
+
 ---
 
 ## Phase 3: Cart, Coupon & Atomic Checkout Engine
@@ -119,6 +139,16 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [ ] Gateway initiation endpoint
   - [ ] Idempotent callback webhook using Redis `SETNX` lock to prevent replay attacks
 
+- [ ] **TASK-306**: Order Fulfillment Queue & Out-of-Stock Reconciliation
+  - [ ] Create `OrderAdjustment` and `OrderHistory` audit trail models
+  - [ ] Implement inventory reconciliation logic: auto-decrement missing items, recalculate totals, trigger partial refund
+  - [ ] Enqueue notification event for customer with delta breakdown
+
+- [ ] **TASK-307**: Dynamic Email Template Engine with TinyMCE
+  - [ ] Create `EmailTemplate` model with placeholders JSON schema
+  - [ ] Implement variable replacement engine (`{{customer_name}}`, `{{order_id}}`, etc.)
+  - [ ] Seed base templates (`order_confirmed`, `order_item_unavailable`, `ticket_replied`)
+
 ---
 
 ## Phase 4: Async Task Worker, Scheduling & Resilience
@@ -136,6 +166,11 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [ ] Periodic task (every 5 min): auto-cancel orders stuck in `PAYMENT_PENDING` > 15 min and release reserved stock
   - [ ] Daily cleanup task: prune expired OTP keys, temp uploads, stale carts
   - [ ] Scheduled precomputation task for `ProductAvailabilitySummary`
+
+- [ ] **TASK-404**: Fulfillment Queue, Email & Subscription Workers
+  - [ ] `process_fulfillment_queue_task` (runs in `order_fulfillment` queue)
+  - [ ] `dispatch_transactional_email_task` (renders TinyMCE templates and sends via SMTP)
+  - [ ] `notify_stock_subscribers_task` (alerts users when back-in-stock or price drop triggers)
 
 ---
 
@@ -159,6 +194,18 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [ ] Comprehensive analytics and read-only views across catalog, customers, and orders
   - [ ] Mutation buttons disabled/hidden for Auditor role
 
+- [ ] **TASK-505**: Support Ticket Operations Desk
+  - [ ] Support tickets datatable filtered by priority, status, and linked order
+  - [ ] Real-time conversation thread with internal notes and canned replies
+
+- [ ] **TASK-506**: Review Moderation & Store Policy Manager
+  - [ ] Product review approval / rejection queue
+  - [ ] Store policy markdown editor (`StorePolicy`) generating vector embeddings for AI RAG
+
+- [ ] **TASK-507**: TinyMCE Visual Email Template Designer
+  - [ ] Rich-text TinyMCE editor integrated into admin panel
+  - [ ] Placeholder chip inserter and live preview renderer with sample data
+
 ---
 
 ## Phase 6: Practical AI Enhancements
@@ -170,6 +217,12 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
 - [ ] **TASK-602**: Admin 1-Click Catalog Auto-Enricher
   - [ ] Admin panel action: Send product title + bullet attributes to LLM
   - [ ] Receive SEO meta title, Persian description, English description, and recommended category tags
+
+- [ ] **TASK-603**: Grounded AI Support Assistant with Policy RAG
+  - [ ] Storefront floating chat widget interface
+  - [ ] Backend RAG endpoint: embeds user query, retrieves top-k `StorePolicy` chunks from pgvector
+  - [ ] Generates friendly, grounded responses with strict policy guardrails
+  - [ ] Automatic fallback: 1-click conversion of chat session into human support `Ticket`
 
 ---
 

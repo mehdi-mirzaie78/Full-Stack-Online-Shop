@@ -64,6 +64,19 @@ erDiagram
     Product ||--o| ProductAvailabilitySummary : "precomputed in"
     Order ||--o{ OrderVerificationCall : "verified by"
     User ||--o{ OrderVerificationCall : "conducts"
+    CustomerProfile ||--o{ SavedProduct : "saves"
+    Product ||--o{ SavedProduct : "saved in"
+    CustomerProfile ||--o{ ProductReview : "authors"
+    Product ||--o{ ProductReview : "receives"
+    CustomerProfile ||--o{ Ticket : "opens"
+    Order ||--o{ Ticket : "referenced by"
+    Ticket ||--|{ TicketMessage : "contains"
+    User ||--o{ TicketMessage : "sends"
+    Order ||--o{ OrderAdjustment : "adjusted by"
+    Product ||--o{ OrderAdjustment : "adjusted for"
+    Order ||--o{ OrderHistory : "audited by"
+    CustomerProfile ||--o{ ProductSubscription : "subscribes"
+    Product ||--o{ ProductSubscription : "targets"
 
     User {
         uuid id PK
@@ -205,6 +218,98 @@ erDiagram
         text notes
         datetime called_at
     }
+
+    SavedProduct {
+        uuid id PK
+        uuid customer_id FK
+        uuid product_id FK
+        datetime saved_at
+    }
+
+    ProductReview {
+        uuid id PK
+        uuid customer_id FK
+        uuid product_id FK
+        int rating "1 to 5"
+        string title
+        text comment
+        boolean is_verified_purchase
+        string status "PENDING | APPROVED | REJECTED"
+        datetime created_at
+    }
+
+    Ticket {
+        uuid id PK
+        uuid customer_id FK
+        uuid order_id FK "Nullable reference"
+        string subject
+        string priority "LOW | NORMAL | HIGH | URGENT"
+        string status "OPEN | WAITING_CLIENT | WAITING_STAFF | RESOLVED | CLOSED"
+        datetime created_at
+        datetime updated_at
+    }
+
+    TicketMessage {
+        uuid id PK
+        uuid ticket_id FK
+        uuid sender_id FK "User reference"
+        string sender_type "CUSTOMER | OPERATOR | AI_ASSISTANT"
+        text content
+        jsonb attachments
+        datetime created_at
+    }
+
+    StorePolicy {
+        uuid id PK
+        string title
+        string category "SHIPPING | RETURNS | PAYMENT | WARRANTY | FAQ"
+        text content_markdown
+        vector embedding "1536 dims pgvector"
+        boolean is_published
+        datetime updated_at
+    }
+
+    EmailTemplate {
+        uuid id PK
+        string slug UK "e.g. order_item_unavailable, order_shipped"
+        string title
+        string subject_template
+        text html_body "TinyMCE HTML with placeholders"
+        jsonb placeholders "e.g. ['customer_name', 'order_id', 'items']"
+        datetime updated_at
+    }
+
+    OrderAdjustment {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int removed_quantity
+        bigint refund_amount
+        string reason "OUT_OF_STOCK | DAMAGED | CUSTOMER_REQUEST"
+        datetime adjusted_at
+    }
+
+    OrderHistory {
+        uuid id PK
+        uuid order_id FK
+        string previous_status
+        string new_status
+        string action_type "STATUS_CHANGE | ITEM_REMOVAL | REFUND | NOTE"
+        uuid author_id FK "Nullable"
+        string author_type "SYSTEM | OPERATOR | CUSTOMER"
+        text description
+        datetime created_at
+    }
+
+    ProductSubscription {
+        uuid id PK
+        uuid customer_id FK
+        uuid product_id FK
+        string subscription_type "BACK_IN_STOCK | PRICE_DROP"
+        bigint target_price "Nullable for PRICE_DROP"
+        boolean is_notified
+        datetime created_at
+    }
 ```
 
 ---
@@ -244,27 +349,31 @@ erDiagram
 
 ---
 
-### Phase 1: Core Domain, Identity & Customer Module
-**Goal**: Secure authentication, profile management, and multi-address support.
+### Phase 1: Core Domain, Identity, Customer & Support Module
+**Goal**: Secure authentication, profile management, multi-address support, wishlist, and ticket desk.
 - **Data Models**:
   - `BaseModel`: UUID primary key, `created_at`, `updated_at`, `deleted_at`, `is_active` (soft-delete with custom manager).
   - `User`: Phone number unique identifier, hashed password, role enum (`SUPERADMIN`, `PRODUCT_MANAGER`, `OPERATOR`, `AUDITOR`, `CUSTOMER`).
   - `CustomerProfile`: 1-to-1 with User, avatar URL, national code, age, gender.
   - `Address`: Province, city, postal code (10-digit regex), detailed body, recipient phone, default flag.
+  - `SavedProduct` (Wishlist): Many-to-many link between Customer and Product with timestamp.
+  - `Ticket` & `TicketMessage`: Support inquiries linked to customer and optional order reference; real-time messaging thread.
 - **Auth Engine**:
   - Endpoint: `POST /api/v1/auth/otp/request` -> generates 6-digit code, saves in Redis with 120s TTL, applies sliding rate limit (max 3 requests per 10 minutes per IP/phone).
   - Endpoint: `POST /api/v1/auth/otp/verify` -> validates code atomically, issues JWT pair (short-lived access + rotating refresh token).
 - **Internationalization (i18n & RTL)**:
   - Frontend support for Persian (`fa-IR`, RTL) and English (`en-US`, LTR).
-- **Deliverable**: Test suite covering OTP generation, TTL expiry, rate limit rejection, and address CRUD.
+- **Deliverable**: Test suite covering OTP generation, TTL expiry, rate limit rejection, address CRUD, wishlist toggling, and ticket message threads.
 
 ---
 
-### Phase 2: Product Catalog & Advanced Business Rules Engine
-**Goal**: Flexible hierarchical catalog, dynamic attribute specs, and rule-based availability.
+### Phase 2: Product Catalog, Reviews & Advanced Rules Engine
+**Goal**: Flexible hierarchical catalog, dynamic attribute specs, customer reviews, stock alerts, and rule-based availability.
 - **Data Models**:
   - `Category`: Self-referencing tree (`parent_id`, `slug`, `path`, `is_active`).
   - `Product`: Name, slug, brand, SKU, base price, stock count, `specifications` (`JSONB` column replacing rigid EAV tables), status (`DRAFT`, `PUBLISHED`, `ARCHIVED`).
+  - `ProductReview`: 1 to 5 star rating, review title, detailed body, `is_verified_purchase` badge, approval status (`PENDING | APPROVED | REJECTED`).
+  - `ProductSubscription`: Back-in-stock or price-drop notification subscriptions per user.
   - `Discount`:
     - Type: Percentage (with optional `max_discount_amount` ceiling) or Fixed Amount.
     - Scope: Product-level or Category-level.
@@ -282,12 +391,12 @@ erDiagram
   - Encapsulate rules into pure domain service: `AvailabilityEngine.can_purchase(product, request_time) -> tuple[bool, str]`.
 - **Media Upload**:
   - `POST /api/v1/media/presign-upload` -> returns signed S3 URL for client direct upload.
-- **Deliverable**: Pytest tests validating category tree traversal, discount math with price capping, summary table generation, and availability rule edge cases.
+- **Deliverable**: Pytest tests validating category tree traversal, discount math with price capping, review submission & moderation, stock alert subscription, and availability rule edge cases.
 
 ---
 
-### Phase 3: Cart, Coupon & Atomic Checkout Engine
-**Goal**: Race-condition-free ordering, stock protection, coupon validation, and customer order verification.
+### Phase 3: Cart, Checkout, Fulfillment Queue & Reconciliation
+**Goal**: Race-condition-free ordering, stock protection, order fulfillment queue, out-of-stock item adjustment, and TinyMCE transactional emails.
 - **Cart Architecture**:
   - Guest cart stored in client state / local storage.
   - Authenticated cart persisted in Redis (`cart:{user_id}`) for cross-device persistence.
@@ -296,7 +405,10 @@ erDiagram
   - `Coupon`: Unique code, percentage or fixed discount, usage limit, per-user usage limit, min order amount, validity window.
   - `Order`: Customer reference, snapshot delivery address, subtotal, discount amount, total price, payment status, fulfillment status.
   - `OrderItem`: Order reference, product reference, snapshot product title, snapshot unit price, quantity.
+  - `OrderAdjustment`: Item removal / quantity decrement logs, unit price delta, refund amount, and reason.
+  - `OrderHistory`: Comprehensive immutable audit trail of state transitions and item modifications with author logging.
   - `OrderVerificationCall`: Operator reference, call status (`PENDING`, `REACHED_CONFIRMED`, `UNREACHABLE`, `CANCELLED_BY_CUSTOMER`), operator notes, timestamp.
+  - `EmailTemplate`: Dynamic TinyMCE HTML templates with placeholder variables (`{{customer_name}}`, `{{order_id}}`, `{{removed_items}}`, `{{refund_amount}}`).
 - **Order State Machine**:
   ```mermaid
   stateDiagram-v2
@@ -320,6 +432,29 @@ erDiagram
       DELIVERED --> [*]
       CANCELLED --> [*]
       REFUNDED --> [*]
+  ```
+- **Order Fulfillment Queue & Out-of-Stock Reconciliation Sequence**:
+  ```mermaid
+  sequenceDiagram
+      autonumber
+      participant Queue as Celery Fulfillment Queue
+      participant Engine as OrderFulfillmentService
+      participant PG as PostgreSQL (ACID)
+      participant GW as Payment Gateway (Refund)
+      participant Email as Celery Email Task (TinyMCE)
+
+      Queue->>Engine: Process Order in PROCESSING status
+      Engine->>PG: Lock Order & Check Stock
+      alt Stock Deficient for OrderItem
+          Engine->>PG: Remove/Decrement OrderItem & INSERT OrderAdjustment
+          Engine->>PG: Recalculate Subtotal, Discount, Total Price
+          Engine->>PG: INSERT OrderHistory ("Item removed due to out-of-stock")
+          Engine->>GW: Execute Partial Refund API (refund_amount)
+          Engine->>Email: Enqueue Task (Template: order_item_unavailable)
+          Email->>Email: Render TinyMCE HTML with Context & Send
+      else Stock Available
+          Engine->>PG: Transition to SHIPPED
+      end
   ```
 - **Checkout & Concurrency Sequence**:
   ```mermaid
@@ -381,15 +516,19 @@ erDiagram
 ---
 
 ### Phase 4: Async Task Worker, Scheduling & Resilience
-**Goal**: Reliable background processing with fault tolerance and DLQ.
+**Goal**: Reliable background processing with fault tolerance, dead-letter routing, and dedicated fulfillment queues.
 - **Worker Configuration (RabbitMQ + Celery)**:
   - Task retry policy: exponential backoff with jitter (max 5 retries).
+  - Dedicated Queues: `default`, `high_priority` (OTP SMS), `order_fulfillment` (inventory reconciliation & refunds), `emails` (TinyMCE template rendering).
   - Dead Letter Exchange (DLX) for poisoned messages.
 - **Background Tasks**:
   - `send_otp_sms_task`: Sends SMS via provider gateway with failure retry.
+  - `process_fulfillment_queue_task`: Checks batch orders in `PROCESSING`, reconciles out-of-stock items, executes partial refunds, and enqueues customer notifications.
+  - `dispatch_transactional_email_task`: Renders TinyMCE template HTML with context data and delivers email via SMTP.
+  - `notify_stock_subscribers_task`: Alerts customers when subscribed out-of-stock items are replenished or price drops occur.
   - `release_unpaid_orders_task`: Runs every 5 minutes. Cancels orders in `PAYMENT_PENDING` longer than 15 minutes and restores inventory stock atomically.
   - `clean_expired_data_task`: Scheduled daily cleanup of stale Redis keys, expired OTP records, and temp upload files.
-- **Deliverable**: Unit and integration tests validating task retry behavior on mock network failure and DLQ routing.
+- **Deliverable**: Unit and integration tests validating task retry behavior on mock network failure, DLQ routing, and fulfillment queue reconciliation.
 
 ---
 
@@ -418,12 +557,16 @@ erDiagram
       AU --> P_RO
   ```
 - **Role Permissions Breakdown**:
-  - **Super Admin**: Unrestricted system-wide access and staff user management.
-  - **Product Manager**: View, edit, delete, and create Products, Categories, Discounts, and Availability Windows. No access to customer data or financial orders.
-  - **Operator**: View, edit, delete, and create Customers, Orders, and Addresses. Conducts phone verification calls and logs call outcomes (`CHECKING` -> `PROCESSING`).
-  - **Auditor (Supervisor)**: System-wide read-only view. Full visibility into metrics, orders, customers, and catalog with zero mutation privileges.
+  - **Super Admin**: Unrestricted system-wide access, staff user management, and email template / policy configuration.
+  - **Product Manager**: View, edit, delete, and create Products, Categories, Discounts, and Availability Windows. Review and moderate product reviews. No access to customer data or financial orders.
+  - **Operator**: View, edit, delete, and create Customers, Orders, and Addresses. Conducts phone verification calls and manages support ticket queues.
+  - **Auditor (Supervisor)**: System-wide read-only view. Full visibility into metrics, orders, audit logs, and catalog with zero mutation privileges.
 - **Key Views**:
-  - Real-time order fulfillment kanban with telephone verification queue.
+  - Real-time order fulfillment kanban with telephone verification queue and adjustment logs.
+  - Support ticket desk with multi-agent conversation threads and order linking.
+  - Product review moderation console (approve, flag, reject).
+  - Store policy knowledge-base manager (markdown editor for AI RAG ground truth).
+  - TinyMCE visual email template builder with placeholder tag injector (`{{customer_name}}`, `{{order_id}}`).
   - Bulk inventory and price adjustment matrix.
   - Dynamic specification editor using JSON schema forms.
   - Store schedule and availability window manager.
@@ -431,14 +574,41 @@ erDiagram
 
 ---
 
-### Phase 6: Practical AI Enhancements
+### Phase 6: Practical AI Enhancements & Grounded Support Assistant
 **Goal**: Real-world utility without infrastructure bloat.
 - **Semantic Product Search**:
   - Product embeddings generated on create/update and stored in PostgreSQL `pgvector`.
   - Search endpoint: hybrid keyword (Postgres Full-Text Search) + vector similarity search.
 - **Admin Catalog Auto-Enricher**:
   - Action inside custom admin: Provide brief product name + bullet specs -> LLM generates formatted Persian/English product description, SEO meta title, and category classification tags.
-- **Deliverable**: Search endpoint ranking relevant items ahead of exact keyword matches; admin generation action integrated.
+- **Grounded AI Support Assistant (Policy RAG + Human Ticket Fallback)**:
+  - Admin publishes policies in `StorePolicy` (returns, shipping, guarantees).
+  - Customer asks questions in storefront chat widget. System embeds query, queries top-k policy chunks using `pgvector`, and generates polite, grounded responses.
+  - One-click ticket conversion: When question cannot be confidently answered or customer requests human help, conversation history converts automatically into a support `Ticket`.
+  ```mermaid
+  sequenceDiagram
+      autonumber
+      actor Customer
+      participant Widget as AI Chat Widget
+      participant API as Support AI Endpoint
+      participant PG as PostgreSQL (pgvector StorePolicy)
+      participant LLM as LiteLLM / OpenAI API
+      participant Desk as Support Ticket System
+
+      Customer->>Widget: Ask Question (e.g. "What is your refund policy?")
+      Widget->>API: POST /api/v1/ai/chat (session_id, query)
+      API->>PG: Query Top-K StorePolicy chunks by cosine similarity
+      PG-->>API: Relevant Policy Markdown Excerpts
+      API->>LLM: Generate friendly response grounded in policy excerpts
+      alt LLM Confident from Policies
+          LLM-->>API: Stream grounded friendly response
+          API-->>Widget: Stream text response
+      else Ambiguous / Customer Requests Agent
+          API->>Desk: Convert conversation to Support Ticket
+          API-->>Widget: "I've created support ticket #1042 for our team."
+      end
+  ```
+- **Deliverable**: Search endpoint ranking relevant items ahead of exact keyword matches; admin generation action integrated; grounded policy chat widget functional with human ticket fallback.
 
 ---
 
