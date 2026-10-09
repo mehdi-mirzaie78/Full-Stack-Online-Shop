@@ -7,23 +7,24 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
 ## Phase 0: Project Scaffolding & Infrastructure Foundations
 
 - [ ] **TASK-001**: Git Repository Initialization & Structure Scaffolding
-  - [x] Create `README.md`, `LICENSE` (MIT), `.gitignore`, and `tasks.md`
-  - [ ] Initialize git repo on `main` and create `develop` branch
-  - [ ] Establish repository folder structure (`/backend`, `/frontend`, `/infra`)
+  - [x] Create `README.md`, `LICENSE` (MIT), `.gitignore`, `tasks.md`, and `AGENTS.md`
+  - [x] Initialize git repo on `main` and create `develop` branch
+  - [ ] Configure root `package.json` runner (`npm run dev`, `dev:client`, `dev:server`)
+  - [ ] Establish repository folder structure (`/server`, `/client`, `/infra`)
 
 - [ ] **TASK-002**: Docker Compose & Local Services Orchestration
   - [ ] Configure `docker-compose.yml` for PostgreSQL 16 (with `pgvector`), Redis 7, RabbitMQ 3.13 (management enabled), and MinIO
-  - [ ] Configure environment variable templates (`.env.example`)
+  - [ ] Configure environment variable templates (`.env.example` in `/server` and `/client`)
   - [ ] Verify healthchecks for all containerized dependencies
 
-- [ ] **TASK-003**: Backend API Boilerplate (Django Ninja)
-  - [ ] Initialize Django project with `pyproject.toml` / dependency management
+- [ ] **TASK-003**: Server API Boilerplate (Django Ninja)
+  - [ ] Initialize Django project in `/server` with dependency management
   - [ ] Install and configure Django Ninja, CORS headers, and PostgreSQL connection
   - [ ] Implement global healthcheck endpoints (`/api/health`, `/api/health/db`, `/api/health/redis`)
   - [ ] Configure Ruff linter and formatter settings
 
-- [ ] **TASK-004**: Frontend Boilerplate (Next.js 15)
-  - [ ] Scaffold Next.js 15 App Router with TypeScript and Tailwind CSS
+- [ ] **TASK-004**: Client Boilerplate (Next.js 15)
+  - [ ] Scaffold Next.js 15 App Router in `/client` with TypeScript and Tailwind CSS
   - [ ] Install and initialize shadcn/ui component library
   - [ ] Configure Biome / ESLint & Prettier
   - [ ] Setup initial RTL layout direction switch (`dir="rtl"` / `dir="ltr"`)

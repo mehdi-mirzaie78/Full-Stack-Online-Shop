@@ -45,8 +45,8 @@ graph TD
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15 (React 19, TypeScript, Tailwind CSS, shadcn/ui, next-intl for RTL/fa-IR & LTR/en-US).
-- **Backend API**: Python 3.12+ with Django Ninja (Async, Pydantic v2, auto OpenAPI).
+- **Client**: Next.js 15 (React 19, TypeScript, Tailwind CSS, shadcn/ui, next-intl for RTL/fa-IR & LTR/en-US).
+- **Server API**: Python 3.12+ with Django Ninja (Async, Pydantic v2, auto OpenAPI).
 - **Primary Database**: PostgreSQL 16 (JSONB specifications, ACID transactions, `pgvector` semantic search).
 - **Caching & Locks**: Redis 7 (OTP keys with 120s TTL, sliding rate limiter, distributed checkout locks).
 - **Queue & Async Worker**: RabbitMQ 3.13 + Celery (Exponential backoff retries, Dead Letter Queue, scheduled Beat tasks).
@@ -67,6 +67,7 @@ graph TD
 
 ## Documentation & Roadmap
 
+- Agent instructions & conventions: [AGENTS.md](./AGENTS.md)
 - Detailed system architecture and business logic: [REQUIREMENTS.md](./REQUIREMENTS.md)
 - Step-by-step implementation tasks and status: [tasks.md](./tasks.md)
 
