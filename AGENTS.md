@@ -1,13 +1,13 @@
 # AGENTS.md — Full-Stack Online Shop Instructions
 
-Modern distributed e-commerce platform: Next.js 15 storefront & custom admin (`/client`), Django Ninja REST API (`/server`), PostgreSQL 16 (`pgvector`), Redis 7, RabbitMQ 3.13, and Celery (`/infra`).
+Modern distributed e-commerce platform: Next.js 15 storefront & custom admin (`/client`), Django REST Framework API (`/server`), PostgreSQL 16 (`pgvector`), Redis 7, RabbitMQ 3.13, and Celery (`/infra`).
 
 ## Project Layout & Root Runner
 
 - Root runner: Root `package.json` orchestrates client and server workspaces.
   - `npm run dev` -> Runs client and server concurrently.
   - `npm run dev:client` -> Boots Next.js 15 app on `:3000`.
-  - `npm run dev:server` -> Boots Django Ninja API on `:8000`.
+  - `npm run dev:server` -> Boots Django REST Framework API on `:8000`.
   - `npm run test` / `npm run lint` -> Runs tests and linters across workspaces.
 - Infrastructure: `docker compose -f infra/docker-compose.yml up -d`
 - Core ports: PostgreSQL (`5432`), Redis (`6379`), RabbitMQ (`5672`, UI `15672`), MinIO (`9000`, UI `9001`).
@@ -40,11 +40,11 @@ Modern distributed e-commerce platform: Next.js 15 storefront & custom admin (`/
 
 - **Modularity & Boundaries**: Monorepo split into `/client`, `/server`, and `/infra`. Zero circular dependencies.
 - **DRY & Single Responsibility**: Extract shared domain calculations to pure services; do not duplicate logic across API endpoints or UI views.
-- **Thin APIs, Pure Services**: Endpoints only validate Pydantic v2 schemas; business logic lives in `services/` (e.g. `AvailabilityEngine`, `CheckoutService`).
+- **Thin APIs, Pure Services**: Endpoints and ViewSets only handle serialization and request dispatch; business logic lives in `services/` (e.g. `AvailabilityEngine`, `CheckoutService`).
 - **Base Model**: Entities inherit `BaseModel` (UUID pk, timestamps, soft-delete manager filtering `is_deleted=False`).
 - **Stock Concurrency**: Inventory updates MUST execute inside `transaction.atomic()` with `select_for_update()`.
 - **Ephemeral Data**: OTP codes and sliding rate-limits belong strictly in Redis with TTLs (120s); never store OTP in PostgreSQL.
-- **Clean Code & Maintainability**: Strict typing across Python (`mypy`/Pydantic) and TypeScript; small functions (<30 lines); self-documenting code over excessive comments.
+- **Clean Code & Maintainability**: Strict typing across Python (`mypy`/DRF serializers) and TypeScript; small functions (<30 lines); self-documenting code over excessive comments.
 - **Git & Task Tracking**:
   - Branches: Work on `feature/*` branched off `develop`. Merge to `develop`, then `main`.
   - Commits: Conventional Commits (`feat(order): ...`, `fix(auth): ...`).

@@ -1,6 +1,6 @@
 # Full-Stack Online Shop
 
-Modern, distributed, production-grade e-commerce platform built with Next.js 15, Django Ninja, PostgreSQL, Redis, RabbitMQ, and Celery.
+Modern, distributed, production-grade e-commerce platform built with Next.js 15, Django REST Framework, PostgreSQL, Redis, RabbitMQ, and Celery.
 
 ---
 
@@ -13,7 +13,7 @@ graph TD
         AdminApp["Custom Admin Dashboard (/admin)"]
     end
 
-    subgraph Gateway["Backend API (Django Ninja)"]
+    subgraph Gateway["Backend API (Django REST Framework)"]
         AuthAPI["Auth & Users Module"]
         CatalogAPI["Product Catalog Module"]
         OrderAPI["Cart & Checkout Engine"]
@@ -46,7 +46,7 @@ graph TD
 ## Tech Stack
 
 - **Client**: Next.js 15 (React 19, TypeScript, Tailwind CSS, shadcn/ui, next-intl for RTL/fa-IR & LTR/en-US).
-- **Server API**: Python 3.12+ with Django Ninja (Async, Pydantic v2, auto OpenAPI).
+- **Server API**: Python 3.12+ with Django REST Framework (DRF) (ViewSets, Serializers, Permissions, drf-spectacular for OpenAPI).
 - **Primary Database**: PostgreSQL 16 (JSONB specifications, ACID transactions, `pgvector` semantic search).
 - **Caching & Locks**: Redis 7 (OTP keys with 120s TTL, sliding rate limiter, distributed checkout locks).
 - **Queue & Async Worker**: RabbitMQ 3.13 + Celery (Exponential backoff retries, Dead Letter Queue, scheduled Beat tasks).
