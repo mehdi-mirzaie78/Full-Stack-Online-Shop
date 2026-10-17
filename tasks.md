@@ -33,10 +33,10 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
 
 ## Phase 1: Core Domain, Identity & Customer Module
 
-- [ ] **TASK-101**: Abstract Base Models & Soft Delete Pattern
-  - [ ] Create `BaseModel` (`id: UUID`, `created_at`, `updated_at`, `deleted_at`, `is_active`, `is_deleted`)
-  - [ ] Implement `SoftDeleteManager` (`objects.all()` excludes soft-deleted records; `objects.all_with_deleted()` includes them)
-  - [ ] Unit tests for soft-delete, restore, and cascade behavior
+- [x] **TASK-101**: Abstract Base Models & Soft Delete Pattern
+  - [x] Create `BaseModel` (`id: UUID`, `created_at`, `updated_at`, `deleted_at`, `is_active`, `is_deleted`)
+  - [x] Implement `SoftDeleteManager` (`objects.all()` excludes soft-deleted records; `objects.all_with_deleted()` includes them)
+  - [x] Unit tests for soft-delete, restore, and cascade behavior
 
 - [ ] **TASK-102**: Custom User & RBAC Model
   - [ ] Create custom `User` model using phone number as unique identifier
