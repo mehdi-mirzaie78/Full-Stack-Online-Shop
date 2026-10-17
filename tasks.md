@@ -12,10 +12,10 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [x] Configure root `package.json` runner (`npm run dev`, `dev:client`, `dev:server`)
   - [x] Establish repository folder structure (`/server`, `/client`, `/infra`)
 
-- [ ] **TASK-002**: Docker Compose & Local Services Orchestration
-  - [ ] Configure `docker-compose.yml` for PostgreSQL 16 (with `pgvector`), Redis 7, RabbitMQ 3.13 (management enabled), and MinIO
-  - [ ] Configure environment variable templates (`.env.example` in `/server` and `/client`)
-  - [ ] Verify healthchecks for all containerized dependencies
+- [x] **TASK-002**: Docker Compose & Local Services Orchestration
+  - [x] Configure `docker-compose.yml` for PostgreSQL 16 (with `pgvector`), Redis 7, RabbitMQ 3.13 (management enabled), and MinIO
+  - [x] Configure environment variable templates (`.env.example` in `/server` and `/client`)
+  - [x] Verify healthchecks for all containerized dependencies
 
 - [ ] **TASK-003**: Server API Boilerplate (Django REST Framework)
   - [ ] Initialize Django project in `/server` with dependency management
