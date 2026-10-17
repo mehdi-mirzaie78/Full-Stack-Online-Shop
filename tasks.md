@@ -6,11 +6,11 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
 
 ## Phase 0: Project Scaffolding & Infrastructure Foundations
 
-- [ ] **TASK-001**: Git Repository Initialization & Structure Scaffolding
+- [x] **TASK-001**: Git Repository Initialization & Structure Scaffolding
   - [x] Create `README.md`, `LICENSE` (MIT), `.gitignore`, `tasks.md`, and `AGENTS.md`
   - [x] Initialize git repo on `main` and create `develop` branch
-  - [ ] Configure root `package.json` runner (`npm run dev`, `dev:client`, `dev:server`)
-  - [ ] Establish repository folder structure (`/server`, `/client`, `/infra`)
+  - [x] Configure root `package.json` runner (`npm run dev`, `dev:client`, `dev:server`)
+  - [x] Establish repository folder structure (`/server`, `/client`, `/infra`)
 
 - [ ] **TASK-002**: Docker Compose & Local Services Orchestration
   - [ ] Configure `docker-compose.yml` for PostgreSQL 16 (with `pgvector`), Redis 7, RabbitMQ 3.13 (management enabled), and MinIO
