@@ -17,11 +17,11 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [x] Configure environment variable templates (`.env.example` in `/server` and `/client`)
   - [x] Verify healthchecks for all containerized dependencies
 
-- [ ] **TASK-003**: Server API Boilerplate (Django REST Framework)
-  - [ ] Initialize Django project in `/server` with dependency management
-  - [ ] Install and configure djangorestframework, drf-spectacular, CORS headers, and PostgreSQL connection
-  - [ ] Implement global healthcheck endpoints (`/api/health/`, `/api/health/db/`, `/api/health/redis/`)
-  - [ ] Configure Ruff linter and formatter settings
+- [x] **TASK-003**: Server API Boilerplate (Django REST Framework)
+  - [x] Initialize Django project in `/server` with dependency management
+  - [x] Install and configure djangorestframework, drf-spectacular, CORS headers, and PostgreSQL connection
+  - [x] Implement global healthcheck endpoints (`/api/health/`, `/api/health/db/`, `/api/health/redis/`)
+  - [x] Configure Ruff linter and formatter settings
 
 - [ ] **TASK-004**: Client Boilerplate (Next.js 15)
   - [ ] Scaffold Next.js 15 App Router in `/client` with TypeScript and Tailwind CSS
