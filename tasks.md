@@ -23,11 +23,11 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [x] Implement global healthcheck endpoints (`/api/health/`, `/api/health/db/`, `/api/health/redis/`)
   - [x] Configure Ruff linter and formatter settings
 
-- [ ] **TASK-004**: Client Boilerplate (Next.js 15)
-  - [ ] Scaffold Next.js 15 App Router in `/client` with TypeScript and Tailwind CSS
-  - [ ] Install and initialize shadcn/ui component library
-  - [ ] Configure Biome / ESLint & Prettier
-  - [ ] Setup initial RTL layout direction switch (`dir="rtl"` / `dir="ltr"`)
+- [x] **TASK-004**: Client Boilerplate (Next.js 15)
+  - [x] Scaffold Next.js 15 App Router in `/client` with TypeScript and Tailwind CSS
+  - [x] Install and initialize shadcn/ui component library
+  - [x] Configure Biome / ESLint & Prettier
+  - [x] Setup initial RTL layout direction switch (`dir="rtl"` / `dir="ltr"`)
 
 ---
 
