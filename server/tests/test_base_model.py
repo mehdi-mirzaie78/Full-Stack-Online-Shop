@@ -2,14 +2,14 @@ import pytest
 from django.db import connection, models
 from django.db.models.deletion import CASCADE
 
-from apps.common.models import BaseModel
+from apps.core.models import BaseModel
 
 
 class DummyParent(BaseModel):
     name = models.CharField(max_length=100)
 
     class Meta(BaseModel.Meta):
-        app_label = "common"
+        app_label = "core"
 
 
 class DummyChild(BaseModel):
@@ -17,7 +17,7 @@ class DummyChild(BaseModel):
     title = models.CharField(max_length=100)
 
     class Meta(BaseModel.Meta):
-        app_label = "common"
+        app_label = "core"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -25,15 +25,15 @@ def setup_test_tables(django_db_setup, django_db_blocker):
     """Create session-wide test tables for dummy models."""
     with django_db_blocker.unblock():
         with connection.cursor() as cursor:
-            cursor.execute("DROP TABLE IF EXISTS common_dummychild CASCADE;")
-            cursor.execute("DROP TABLE IF EXISTS common_dummyparent CASCADE;")
+            cursor.execute("DROP TABLE IF EXISTS core_dummychild CASCADE;")
+            cursor.execute("DROP TABLE IF EXISTS core_dummyparent CASCADE;")
         with connection.schema_editor() as schema_editor:
             schema_editor.create_model(DummyParent)
             schema_editor.create_model(DummyChild)
         yield
         with connection.cursor() as cursor:
-            cursor.execute("DROP TABLE IF EXISTS common_dummychild CASCADE;")
-            cursor.execute("DROP TABLE IF EXISTS common_dummyparent CASCADE;")
+            cursor.execute("DROP TABLE IF EXISTS core_dummychild CASCADE;")
+            cursor.execute("DROP TABLE IF EXISTS core_dummyparent CASCADE;")
 
 
 @pytest.mark.django_db

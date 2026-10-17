@@ -26,8 +26,8 @@ Modern distributed e-commerce platform: Next.js 15 storefront & custom admin (`/
 - Run test suite: `pytest -v --cov=.`
 - Run single test: `pytest tests/test_availability.py -k test_time_window`
 - Linter & Formatter: `ruff check . --fix && ruff format .`
-- Celery worker: `celery -A core worker -l INFO`
-- Celery beat: `celery -A core beat -l INFO`
+- Celery worker: `celery -A config worker -l INFO`
+- Celery beat: `celery -A config beat -l INFO`
 
 ### Client (`/client`)
 - Dev server: `npm run dev`

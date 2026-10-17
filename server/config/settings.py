@@ -1,8 +1,10 @@
+import sys
 from pathlib import Path
 
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR / "apps"))
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -33,7 +35,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     # Local apps
-    "apps.common",
+    "apps.core",
 ]
 
 MIDDLEWARE = [
@@ -47,7 +49,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "core.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
@@ -65,8 +67,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "core.wsgi.application"
-ASGI_APPLICATION = "core.asgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 # Database: PostgreSQL native (No SQLite per AGENTS.md)
 DATABASES = {"default": env.db("DATABASE_URL")}

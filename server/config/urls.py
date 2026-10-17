@@ -6,7 +6,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from .health import health_check, health_db, health_redis
+from apps.core.health import health_check, health_db, health_redis
 
 urlpatterns = [
     path("admin/", admin.site.urls),
