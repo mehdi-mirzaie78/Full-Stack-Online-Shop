@@ -41,7 +41,8 @@ Modern distributed e-commerce platform: Next.js 15 storefront & custom admin (`/
 - **Modularity & Boundaries**: Monorepo split into `/client`, `/server`, and `/infra`. Zero circular dependencies.
 - **DRY & Single Responsibility**: Extract shared domain calculations to pure services; do not duplicate logic across API endpoints or UI views.
 - **Thin APIs, Pure Services**: Endpoints and ViewSets only handle serialization and request dispatch; business logic lives in `services/` (e.g. `AvailabilityEngine`, `CheckoutService`).
-- **Base Model**: Entities inherit `BaseModel` (UUID pk, timestamps, soft-delete manager filtering `is_deleted=False`).
+- **Base Model & Best Practices**: Entities inherit `BaseModel` from `apps.core.models` (UUID pk, timestamps, soft-delete manager filtering `is_deleted=False`). Clean, maintainable, extendable domain code with small single-purpose methods.
+- **Bilingual & Internationalization (i18n)**: All Django models and fields MUST use `gettext_lazy as _` (`from django.utils.translation import gettext_lazy as _`) for all `verbose_name`, `verbose_name_plural`, and `help_text` definitions to support bilingual operation (Persian/English). Model `Meta` must define translatable `verbose_name` and `verbose_name_plural`.
 - **Stock Concurrency**: Inventory updates MUST execute inside `transaction.atomic()` with `select_for_update()`.
 - **Ephemeral Data**: OTP codes and sliding rate-limits belong strictly in Redis with TTLs (120s); never store OTP in PostgreSQL.
 - **Clean Code & Maintainability**: Strict typing across Python (`mypy`/DRF serializers) and TypeScript; small functions (<30 lines); self-documenting code over excessive comments.

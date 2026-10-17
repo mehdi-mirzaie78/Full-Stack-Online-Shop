@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class SoftDeleteQuerySet(models.QuerySet):
@@ -67,38 +68,45 @@ class SoftDeleteAllManager(models.Manager):
 class BaseModel(models.Model):
     """
     Abstract base entity for all domain models.
-    Provides UUID primary key, timestamps, and soft-delete capabilities.
+    Provides UUID primary key, timestamps, soft-delete capabilities,
+    and bilingual gettext_lazy metadata.
     """
 
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
-        help_text="Cryptographically strong UUIDv4 identifier",
+        verbose_name=_("ID"),
+        help_text=_("Cryptographically strong UUIDv4 identifier"),
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
         db_index=True,
-        help_text="Timestamp when entity was created",
+        verbose_name=_("Created at"),
+        help_text=_("Timestamp when entity was created"),
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        help_text="Timestamp when entity was last updated",
+        verbose_name=_("Updated at"),
+        help_text=_("Timestamp when entity was last updated"),
     )
     deleted_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Timestamp when entity was soft-deleted (null if active)",
+        verbose_name=_("Deleted at"),
+        help_text=_("Timestamp when entity was soft-deleted (null if active)"),
     )
     is_active = models.BooleanField(
         default=True,
         db_index=True,
-        help_text="Operational toggle (active/inactive)",
+        verbose_name=_("Is active"),
+        help_text=_("Operational toggle indicating whether record is active"),
     )
     is_deleted = models.BooleanField(
         default=False,
         db_index=True,
-        help_text="Soft-delete flag",
+        verbose_name=_("Is deleted"),
+        help_text=_("Soft-delete flag indicating whether record has been soft-deleted"),
     )
 
     objects = SoftDeleteManager()
@@ -107,6 +115,10 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
         ordering = ["-created_at"]
+        get_latest_by = "created_at"
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}(id={self.id}, is_deleted={self.is_deleted})>"
 
     def delete(self, using=None, keep_parents=False, hard: bool = False):
         """
