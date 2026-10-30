@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, useCallback, useState, type ReactNode } from "react";
+import { Component, useCallback, useRef, useState, type ReactNode } from "react";
+import { reportError } from "@/lib/error-reporting";
 
 const MaterialCanvas = dynamic(() => import("./material-canvas"), { ssr: false });
 const initial = { color: "#00cddd", roughness: 0.35, metalness: 0.3 };
@@ -18,7 +19,14 @@ export default function MaterialLab({ persian }: { persian: boolean }) {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [settings, setSettings] = useState(initial);
-  const fail = useCallback(() => setFailed(true), []);
+  const failureReported = useRef(false);
+  const fail = useCallback(() => {
+    if (!failureReported.current) {
+      failureReported.current = true;
+      reportError("preview_failed", undefined);
+    }
+    setFailed(true);
+  }, []);
   const unavailable = persian ? "نمایش سه‌بعدی در دسترس نیست. پیش‌نمایش ثابت باقی می‌ماند." : "3D unavailable. Static preview remains available.";
   const button = "rounded-md border border-neon-cyan/50 px-4 py-2 text-sm text-neon-cyan focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-cyan";
   return (

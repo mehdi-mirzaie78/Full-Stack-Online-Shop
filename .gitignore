@@ -72,3 +72,9 @@ rabbitmq_data/
 
 # Separate Next.js development output
 .next-dev/
+
+# Isolated verification and browser reports
+.venv-ci/
+playwright-report/
+test-results/
+*.junit.xml

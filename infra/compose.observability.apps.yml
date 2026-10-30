@@ -1,0 +1,11 @@
+# Application integration; standalone telemetry smoke intentionally omits this file.
+services:
+  server:
+    environment:
+      OTEL_ENABLED: 'true'
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+  client:
+    environment:
+      OTEL_ENABLED: 'true'
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_BACKEND_ORIGIN: http://server:8000

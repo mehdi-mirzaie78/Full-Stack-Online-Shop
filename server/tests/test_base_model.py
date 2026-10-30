@@ -4,6 +4,8 @@ from django.db.models.deletion import CASCADE
 
 from apps.core.models import BaseModel
 
+pytestmark = pytest.mark.integration
+
 
 class DummyParent(BaseModel):
     name = models.CharField(max_length=100)

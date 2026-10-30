@@ -1,0 +1,163 @@
+{
+  "services": {
+    "grafana": {
+      "image": "${GRAFANA_IMAGE:-grafana/grafana:13.3.0@sha256:488984b716c0862639f91a698adbe2862677a5a07bad42da5f03f3030883b205}",
+      "ports": [
+        "127.0.0.1:${OBS_GRAFANA_PORT:-3001}:3000"
+      ],
+      "restart": "unless-stopped",
+      "networks": [
+        "telemetry"
+      ],
+      "volumes": [
+        "grafana_data:/var/lib/grafana",
+        "./observability/grafana/datasources.yml:/etc/grafana/provisioning/datasources/local.yml:ro",
+        "./observability/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/local.yml:ro",
+        "./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro"
+      ],
+      "environment": {
+        "GF_SECURITY_ADMIN_USER": "${GRAFANA_ADMIN_USER:-observer}",
+        "GF_SECURITY_ADMIN_PASSWORD__FILE": "/run/secrets/grafana_password",
+        "GF_USERS_ALLOW_SIGN_UP": "false",
+        "GF_AUTH_ANONYMOUS_ENABLED": "false",
+        "GF_ANALYTICS_REPORTING_ENABLED": "false",
+        "GF_ANALYTICS_CHECK_FOR_UPDATES": "false",
+        "GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES": "false",
+        "GF_PLUGINS_PREINSTALL_DISABLED": "true"
+      },
+      "secrets": [
+        "grafana_password"
+      ]
+    },
+    "loki": {
+      "image": "${LOKI_IMAGE:-grafana/loki:3.7.9@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28}",
+      "ports": [
+        "127.0.0.1:${OBS_LOKI_PORT:-3101}:3100"
+      ],
+      "restart": "unless-stopped",
+      "networks": [
+        "telemetry"
+      ],
+      "volumes": [
+        "loki_data:/loki",
+        "./observability/loki.yml:/etc/loki/local.yml:ro"
+      ],
+      "command": [
+        "-config.file=/etc/loki/local.yml"
+      ]
+    },
+    "tempo": {
+      "image": "${TEMPO_IMAGE:-grafana/tempo:2.10.10@sha256:12b0820f13ffa10ce956b6e9acc3b03f3cffded99109be6cc09d106fe56e5d38}",
+      "ports": [
+        "127.0.0.1:${OBS_TEMPO_PORT:-3200}:3200"
+      ],
+      "restart": "unless-stopped",
+      "networks": [
+        "telemetry"
+      ],
+      "volumes": [
+        "tempo_data:/var/tempo",
+        "./observability/tempo.yml:/etc/tempo/local.yml:ro"
+      ],
+      "command": [
+        "-config.file=/etc/tempo/local.yml"
+      ]
+    },
+    "prometheus": {
+      "image": "${PROMETHEUS_IMAGE:-prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2}",
+      "ports": [
+        "127.0.0.1:${OBS_PROMETHEUS_PORT:-9090}:9090"
+      ],
+      "restart": "unless-stopped",
+      "networks": [
+        "telemetry"
+      ],
+      "volumes": [
+        "prometheus_data:/prometheus",
+        "./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+        "./observability/alerts.yml:/etc/prometheus/alerts.yml:ro",
+        "./observability/test_alerts.yml:/etc/prometheus/test_alerts.yml:ro"
+      ],
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus",
+        "--storage.tsdb.retention.time=15d",
+        "--storage.tsdb.retention.size=1GB",
+        "--web.enable-remote-write-receiver"
+      ]
+    },
+    "alloy": {
+      "image": "${ALLOY_IMAGE:-grafana/alloy:v1.21.3@sha256:8ab871206bd2d8f89277f53abffee5f452a293980788d52f85fa183a87a505a4}",
+      "ports": [
+        "127.0.0.1:${OBS_ALLOY_PORT:-12345}:12345",
+        "127.0.0.1:${OBS_OTLP_PORT:-4318}:4318"
+      ],
+      "restart": "unless-stopped",
+      "networks": [
+        "telemetry",
+        "default",
+        "collector-api"
+      ],
+      "volumes": [
+        "alloy_data:/var/lib/alloy",
+        "./observability/config.alloy:/etc/alloy/config.alloy:ro"
+      ],
+      "command": [
+        "run",
+        "/etc/alloy/config.alloy",
+        "--storage.path=/var/lib/alloy",
+        "--server.http.listen-addr=0.0.0.0:12345",
+        "--disable-reporting"
+      ],
+      "environment": {
+        "OBS_LOG_SCOPE": "${OBS_LOG_SCOPE:-development}"
+      }
+    },
+    "docker-socket-proxy": {
+      "image": "${DOCKER_SOCKET_PROXY_IMAGE:-haproxy:3.2.8-alpine@sha256:8c6b55d891584afded3ab1b91063a703ecc8ff2481302b691773648ffa806226}",
+      "user": "0:0",
+      "command": [
+        "haproxy",
+        "-W",
+        "-db",
+        "-f",
+        "/usr/local/etc/haproxy/haproxy.cfg"
+      ],
+      "volumes": [
+        "/var/run/docker.sock:/var/run/docker.sock:ro",
+        "./observability/socket-proxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"
+      ],
+      "networks": [
+        "collector-api"
+      ],
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "restart": "unless-stopped"
+    }
+  },
+  "networks": {
+    "telemetry": {
+      "internal": false
+    },
+    "collector-api": {
+      "internal": true
+    }
+  },
+  "volumes": {
+    "grafana_data": {},
+    "loki_data": {},
+    "tempo_data": {},
+    "prometheus_data": {},
+    "alloy_data": {}
+  },
+  "secrets": {
+    "grafana_password": {
+      "file": "${OBS_GRAFANA_PASSWORD_FILE:?Set dedicated Grafana password file outside root .env}"
+    }
+  }
+}

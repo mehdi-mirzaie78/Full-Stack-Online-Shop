@@ -1,0 +1,6 @@
+!src/lib/
+!src/lib/error-reporting.ts
+!src/lib/error-reporting.test.ts
+playwright-report/
+test-results/
+*.junit.xml
