@@ -6,9 +6,17 @@
   "scripts": {
     "dev": "concurrently -n \"client,server\" -c \"blue,green\" \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "npm --prefix client run dev",
-    "dev:server": "cd server && python manage.py runserver 0.0.0.0:8000",
+    "dev:server": "cd server && .venv/bin/python manage.py runserver 0.0.0.0:8000",
     "test": "npm --prefix client run test && (cd server && pytest)",
-    "lint": "npm --prefix client run lint && (cd server && ruff check .)"
+    "lint": "npm --prefix client run lint && (cd server && ruff check .)",
+    "infra:up": "docker compose --env-file .env -f infra/docker-compose.yml up -d --wait",
+    "infra:status": "docker compose --env-file .env -f infra/docker-compose.yml ps",
+    "docker:dev": "docker compose --env-file .env -f infra/docker-compose.yml -f infra/compose.dev.yml up --watch",
+    "docker:up": "docker compose --env-file .env -f infra/docker-compose.yml -f infra/compose.dev.yml up -d --wait",
+    "docker:logs": "docker compose --env-file .env -f infra/docker-compose.yml -f infra/compose.dev.yml logs -f client server",
+    "docker:status": "docker compose --env-file .env -f infra/docker-compose.yml -f infra/compose.dev.yml ps",
+    "docker:down": "docker compose --env-file .env -f infra/docker-compose.yml -f infra/compose.dev.yml down",
+    "docker:build": "docker compose --env-file .env -f infra/docker-compose.yml -f infra/compose.dev.yml build"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

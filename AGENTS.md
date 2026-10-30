@@ -1,59 +1,34 @@
-# AGENTS.md — Full-Stack Online Shop Instructions
+# AGENTS.md — Project-wide rules
 
-Modern distributed e-commerce platform: Next.js 15 storefront & custom admin (`/client`), Django REST Framework API (`/server`), PostgreSQL 16 (`pgvector`), Redis 7, RabbitMQ 3.13, and Celery (`/infra`).
+Next.js 15 / React 19 storefront and custom admin, Django REST Framework modular monolith, PostgreSQL 16 + pgvector, Redis, RabbitMQ, Celery, and S3-compatible storage.
 
-## Project Layout & Root Runner
+## Read only relevant layers
 
-- Root runner: Root `package.json` orchestrates client and server workspaces.
-  - `npm run dev` -> Runs client and server concurrently.
-  - `npm run dev:client` -> Boots Next.js 15 app on `:3000`.
-  - `npm run dev:server` -> Boots Django REST Framework API on `:8000`.
-  - `npm run test` / `npm run lint` -> Runs tests and linters across workspaces.
-- Infrastructure: `docker compose -f infra/docker-compose.yml up -d`
-- Core ports: PostgreSQL (`5432`), Redis (`6379`), RabbitMQ (`5672`, UI `15672`), MinIO (`9000`, UI `9001`).
+These linked guides are instructions, not optional background. Root rules apply everywhere; scoped guides add detail. Read all relevant layers for cross-stack work. Keep rules in their owning guide, link rather than duplicate, and do not load every guide for unrelated changes.
 
-## Environment & Secrets Policy
+| Work | Required guide |
+| --- | --- |
+| Client/UI, typography, Three.js | [client/AGENTS.md](client/AGENTS.md) |
+| Models, API, business rules, workers | [server/AGENTS.md](server/AGENTS.md) |
+| Containers, services, configuration | [infra/AGENTS.md](infra/AGENTS.md) |
+| Feature tests / verification | [Testing](docs/development/testing.md) |
+| Domain ownership / modeling | [DDD guide](docs/domain-driven-design.md) |
+| Admin operations / shop configuration | [Admin and shop settings](docs/admin-and-shop-settings.md) |
 
-- Secret isolation: Dedicated `.env` files live in `/server` and `/client` (git-ignored).
-- Version control rule: Commit ONLY `.env.example` templates. Never commit `.env` or plain credentials.
-- Local setup: Copy `.env.example` -> `.env` in target workspace before running.
+## Clean code on every change
 
-## Exact Commands
+- Read definitions/usages first; match existing style. Use clear business names, explicit types, small cohesive functions/components, and one responsibility per module. Prefer functions under 30 lines where it improves clarity; do not fragment readable code just to meet a count.
+- DRY: one owner for each business rule; reuse owning use cases across APIs, admin, and workers. Extract real repeated behavior, not unrelated code that only looks similar. Avoid copy-paste rules and premature generic abstractions.
+- YAGNI: stdlib/native platform and installed dependencies first. Smallest correct diff; no empty scaffolding, speculative interfaces, generic repositories, or unrelated refactors. Extend through clear module boundaries, not a framework for hypothetical features.
+- Validate at trust boundaries; handle failures without losing data, hiding errors, or leaking secrets. Keep permissions, accessibility, concurrency, and audit guarantees intact. Comments explain why, not obvious code.
+- Develop one tested vertical slice at a time. New model delivery includes its permitted Next.js admin operations + protected API + tests; do not defer admin usability until final hardening. Read-only/derived/audit models use safe inspection/actions, not unrestricted CRUD.
+- No Django admin UI or model registrations. Next.js `/admin` + DRF is the only staff panel. Keep Django auth/permissions; removing admin does not mean removing security.
+- Use pragmatic DDD; preserve domain invariants and existing requirements. Resolve TASK-007 before catalog/checkout modeling; do not invent missing business policies.
 
-### Server (`/server`)
-- Run server: `python manage.py runserver 0.0.0.0:8000`
-- Migrations: `python manage.py makemigrations && python manage.py migrate`
-- Run test suite: `pytest -v --cov=.`
-- Run single test: `pytest tests/test_availability.py -k test_time_window`
-- Linter & Formatter: `ruff check . --fix && ruff format .`
-- Celery worker: `celery -A config worker -l INFO`
-- Celery beat: `celery -A config beat -l INFO`
+## Workflow and verification
 
-### Client (`/client`)
-- Dev server: `npm run dev`
-- Typecheck: `npx tsc --noEmit`
-- Linter: `npm run lint`
-- Unit tests: `npm run test`
-- E2E tests: `npx playwright test`
-
-## Architecture & Code Standards
-
-- **Modularity & Boundaries**: Monorepo split into `/client`, `/server`, and `/infra`. Zero circular dependencies.
-- **DRY & Single Responsibility**: Extract shared domain calculations to pure services; do not duplicate logic across API endpoints or UI views.
-- **Thin APIs, Pure Services**: Endpoints and ViewSets only handle serialization and request dispatch; business logic lives in `services/` (e.g. `AvailabilityEngine`, `CheckoutService`).
-- **Base Model & Best Practices**: Entities inherit `BaseModel` from `apps.core.models` (UUID pk, timestamps, soft-delete manager filtering `is_deleted=False`). Clean, maintainable, extendable domain code with small single-purpose methods.
-- **Bilingual & Internationalization (i18n)**: All Django models and fields MUST use `gettext_lazy as _` (`from django.utils.translation import gettext_lazy as _`) for all `verbose_name`, `verbose_name_plural`, and `help_text` definitions to support bilingual operation (Persian/English). Model `Meta` must define translatable `verbose_name` and `verbose_name_plural`.
-- **Stock Concurrency**: Inventory updates MUST execute inside `transaction.atomic()` with `select_for_update()`.
-- **Ephemeral Data**: OTP codes and sliding rate-limits belong strictly in Redis with TTLs (120s); never store OTP in PostgreSQL.
-- **Clean Code & Maintainability**: Strict typing across Python (`mypy`/DRF serializers) and TypeScript; small functions (<30 lines); self-documenting code over excessive comments.
-- **Git & Task Tracking**:
-  - Branches: Work on `feature/*` branched off `develop`. Merge to `develop`, then `main`.
-  - Commits: Conventional Commits (`feat(order): ...`, `fix(auth): ...`).
-  - Progress: Update `tasks.md` marks (`[ ]` -> `[/]` -> `[x]`) on every task transition.
-
-## Pitfalls & Prohibitions
-
-- **No SQLite in dev or test**: PostgreSQL native `JSONB` specs and `pgvector` columns break under SQLite. Tests require PostgreSQL test DB.
-- **Presigned Uploads Only**: Never stream media files through Django. Issue S3 presigned URLs (`POST /api/v1/media/presign-upload`) for direct upload to MinIO/S3.
-- **Webhook Idempotency**: Payment callbacks must set Redis atomic locks (`SETNX lock:payment:{token}`) before mutating order state.
-- **Summary Table Invalidation**: Update or invalidate `ProductAvailabilitySummary` on any schedule or window mutation.
+- Work on `feature/*` off `develop`; Conventional Commits. Do not commit/push without request. Preserve unrelated working-tree edits.
+- Update `tasks.md` on every transition (`[ ]` pending, `[/]` active, `[x]` verified). Keep requirements/ERD consistent with domain changes.
+- Require relevant unit, integration, and E2E coverage alongside features; follow [testing guide](docs/development/testing.md). Record missing tools/services and unrun checks honestly.
+- Root runners: `npm run dev`, `npm run dev:client`, `npm run dev:server`, `npm run test`, `npm run lint`, `npm run infra:up`, `npm run infra:status`. Root test runs Vitest then Pytest, not Playwright. Backend root test/lint need activated Python environment; backend dev runner uses `server/.venv`.
+- Never read/print/commit secrets. Shared local config is root `.env` (ignored); copy `.env.example` for setup. Only `NEXT_PUBLIC_` values may reach browsers. Use example templates in git, never real credentials.

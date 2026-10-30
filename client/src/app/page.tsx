@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Box, Layers, Cpu, Sparkles, Check, X, Globe } from "lucide-react";
+import MaterialLab from "@/components/three/material-lab";
 
 export default function HomePage() {
   const [direction, setDirection] = useState<"rtl" | "ltr">("rtl");
@@ -50,10 +51,10 @@ export default function HomePage() {
         <div className="max-w-2xl space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-neon-pink/40 bg-neon-pink/10 px-3 py-1 text-xs text-neon-pink font-mono">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>UNREAL ENGINE 5 & 3DS MAX COMPATIBLE</span>
+            <span lang="en" dir="ltr">UNREAL ENGINE 5 & 3DS MAX COMPATIBLE</span>
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
             {direction === "rtl" ? (
               <>
                 فروشگاه متریال‌های سه‌بعدی نسل آینده با کیفیت{" "}
@@ -85,10 +86,12 @@ export default function HomePage() {
         </div>
       </section>
 
+      <MaterialLab persian={direction === "rtl"} />
+
       {/* Featured Products */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-bold tracking-wide flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2">
             <Box className="h-5 w-5 text-neon-cyan" />
             <span>{direction === "rtl" ? "محصولات برگزیده و شیدرها" : "Featured Shaders & Materials"}</span>
           </h2>
@@ -106,7 +109,7 @@ export default function HomePage() {
                   <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-muted text-neon-cyan border border-neon-cyan/20">
                     {p.tag}
                   </span>
-                  <div className="flex items-center gap-1.5 text-xs font-mono">
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
                     {p.available ? (
                       <span className="inline-flex items-center gap-1 text-neon-lime">
                         <Check className="h-3.5 w-3.5" />
@@ -128,17 +131,17 @@ export default function HomePage() {
                 <div className="space-y-1.5 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{p.software.join(" • ")}</span>
+                    <span lang="en" dir="ltr">{p.software.join(" • ")}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{p.resolution}</span>
+                    <span lang="en" dir="ltr">{p.resolution}</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 flex items-center justify-between border-t border-border/60 pt-4">
-                <span className="font-mono text-sm font-semibold text-white">
+                <span lang="fa" className="text-sm font-semibold tabular-nums text-white">
                   {p.price}
                 </span>
                 <button

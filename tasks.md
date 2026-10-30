@@ -2,9 +2,24 @@
 
 Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pending, `[/]` In Progress, `[x]` Completed.
 
+Testing rule: every feature includes relevant unit, integration, and E2E coverage as it is built. All three layers are required across the project; Phase 7 closes gaps and enforces release gates, not the start of testing. Existing DB-backed BaseModel tests are integration coverage; manual browser checks are not an automated E2E suite.
+
+Delivery rule: follow [layered instructions](./AGENTS.md) and [admin/settings contract](./docs/admin-and-shop-settings.md). Every new model ships its permitted Next.js staff operations, protected API, and tests in the same slice. Immutable audit/derived records use safe inspection/actions, not unrestricted CRUD. Phase 5 does not postpone model administration.
+
 ---
 
+- [x] **TASK-INFRA-S3**: Replace unavailable MinIO image with pinned SeaweedFS; all Compose services healthy; authenticated S3 bucket listing and object upload/download/delete verified.
+
 ## Phase 0: Project Scaffolding & Infrastructure Foundations
+
+- [x] **TASK-010**: Review Fixes & Bilingual Typography Consistency
+  - [x] Centralize English/Persian body/heading rhythm; fix slider labels, add explicit page-reload failed-import recovery and phase-aware root environment loading
+  - [x] Audit clean; 10 client tests, 15 backend tests, typecheck/lint/build and browser spacing/labels/reload/mobile checks pass; clean Docker npm 10 install and client tests pass
+
+- [x] **TASK-009**: Layered Engineering Rules & Custom Admin Contract
+  - [x] Split root/client/server/infra/testing instructions; require readable, maintainable code, DRY and minimal abstractions for every change
+  - [x] Specify per-model custom Next.js administration and ShopSettings singleton roadmap; preserve Django auth/permissions
+  - [x] Remove Django admin app/routes; 15 backend tests, touched-file Ruff, Django system checks and documentation links pass
 
 - [x] **TASK-001**: Git Repository Initialization & Structure Scaffolding
   - [x] Create `README.md`, `LICENSE` (MIT), `.gitignore`, `tasks.md`, and `AGENTS.md`
@@ -29,14 +44,99 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
   - [x] Configure Biome / ESLint & Prettier
   - [x] Setup initial RTL layout direction switch (`dir="rtl"` / `dir="ltr"`)
 
+- [x] **TASK-008**: Polished Persian & English Typography
+  - [x] Self-host Vazirmatn and Manrope variable fonts with licenses; apply language-aware font stacks
+  - [x] Refine heading spacing and UI typography; verify both languages, mobile layout, and client checks
+
+- [ ] **TASK-005**: Automated Test Harness & Isolated Test Environment
+  - [ ] Establish distinct unit, integration, and E2E discovery/commands; register Pytest markers and keep Vitest from collecting Playwright tests
+  - [ ] Add Playwright dependency, configuration, browser installation instructions, and first repeatable storefront smoke test
+  - [ ] Provide deterministic fixtures and isolated PostgreSQL test DB, Redis namespace/database, and test storage; never use SQLite or production resources
+  - [ ] Configure test-only payment/SMS/email adapters so tests cannot trigger real charges or sends
+  - [ ] Document service startup, seed/reset/cleanup, environment prerequisites, and failure artifacts
+  - [ ] Acceptance: each layer runs independently with meaningful assertions; unavailable dependencies fail clearly, not silently skip critical checks
+
+- [x] **TASK-006**: DDD Architecture & Shared Business Language
+  - [x] Document bounded contexts, business vocabulary, invariants, transaction boundaries, and Django implementation rules in `docs/domain-driven-design.md`
+  - [x] Link conventions and requirements; map upcoming feature work to owning contexts without generating empty apps
+
+- [ ] **TASK-007**: Resolve Domain Questions Before Catalog/Checkout Modeling
+  - [ ] Confirm physical goods, digital assets, or both; define stock/reservations, shipping versus download entitlement, license/refund rules, and availability applicability
+  - [ ] Specify currency unit/rounding, store timezone/calendar, availability boundary semantics, and coupon/discount precedence
+  - [ ] Reconcile payment and fulfillment states, stock reservation/commit/release timing, and authoritative transition rules across requirements and ERD
+  - [ ] Acceptance: worked business examples and agreed invariants recorded in DDD guide and reflected in requirements/ERD; no silent change to existing scored constraints
+
+---
+
+## Three.js Learning Track: Material Storefront
+
+Work alongside business phases; this track does not replace catalog, auth, or checkout work. Learning checkpoints and source links: [docs/threejs-learning.md](./docs/threejs-learning.md).
+
+- [x] **TASK-3D-001**: Native Three.js Foundation & First Material Lab
+  - [x] Add `three` and TypeScript types; keep WebGL code behind a client-only dynamic import
+  - [x] Build an opt-in material sphere with orbit controls, color, roughness, metalness, and reset
+  - [x] Preserve Persian/English controls, keyboard access, static fallback, and on-demand rendering
+  - [x] Verify scene tests, client typecheck, lint, production build, and browser behavior
+  - [x] Document scene, camera, mesh, lights, renderer, and cleanup; leave exercises for learner
+  - Verification: production browser smoke checks and development Strict Mode load pass; real-device touch gesture validation remains in TASK-3D-006.
+
+- [ ] **TASK-3D-002**: PBR Texture Inspector (after TASK-3D-001)
+  - [ ] Learn UVs and texture color space; load a licensed local base-color, normal, roughness, and metalness map set
+  - [ ] Mark base-color maps as sRGB; keep normal/roughness/metalness maps as non-color data
+  - [ ] Add UV tiling and map toggles with DOM controls; dispose replaced textures
+  - [ ] Compare same material under two lighting setups; explain why this is not an exact UE/V-Ray/Corona preview
+  - [ ] Acceptance: texture load failure preserves poster and controls; no remote asset dependency in starter
+
+- [ ] **TASK-3D-003**: Catalog Product Preview (after TASK-201, TASK-205, TASK-206, TASK-3D-002)
+  - [ ] Define validated, optional preview metadata: poster, approved asset URLs, material maps, and attribution
+  - [ ] Extend presigned upload policy for preview assets with type, byte-size, origin, and resource limits
+  - [ ] Reuse one active viewer on product detail; keep product grids as static posters
+  - [ ] Keep price, availability, license, and cart actions in HTML, independent of WebGL
+  - [ ] Acceptance: no WebGL or asset failure blocks browsing or purchase; previews never expose paid source downloads
+
+- [ ] **TASK-3D-004**: Model Turntable (after TASK-3D-003)
+  - [ ] Learn scene graphs/transforms with a licensed GLB and `GLTFLoader`; frame model bounds
+  - [ ] Validate asset and external-resource URLs; prefer self-contained GLB previews
+  - [ ] Add keyboard-accessible view presets, zoom limits, and reset; clean up every geometry, material, and texture
+  - [ ] Add explicit animation toggle only if useful; default off and respect reduced motion, hidden tabs, and offscreen state
+  - [ ] Acceptance: model load errors/timeouts retain poster and usable purchase controls
+
+- [ ] **TASK-3D-005**: Material Comparison & Shader Experiments (after TASK-3D-002)
+  - [ ] Compare two materials on one shared canvas under identical light/camera settings
+  - [ ] Learn uniforms, vertex/fragment stages, and GLSL with one optional shader exercise
+  - [ ] Treat browser shaders as demos, not executable previews of HLSL or proprietary engine shaders
+  - [ ] Acceptance: standard PBR viewer remains default; experiments never enter cart/admin critical paths
+
+- [ ] **TASK-3D-006**: Production Preview Quality Gate (before storefront release)
+  - [ ] Automate browser checks for RTL/LTR, keyboard controls, blocked WebGL, lost context, retry, resize, and route cleanup
+  - [ ] Profile a representative mobile device: initial JS, asset bytes, frame time, GPU memory, and idle work
+  - [ ] Set measured budgets; cap pixel ratio, render on demand, lazy-load assets, and retain static posters
+  - [ ] Acceptance: no idle animation loop, no repeated-mount resource growth, and no 3D dependency required for checkout
+
 ---
 
 ## Phase 1: Core Domain, Identity & Customer Module
 
+Build TASK-501 after TASK-102/103 authentication and before delivering additional managed models. TASK-102 includes initial protected identity management APIs and staff screens; TASK-501 provides their shared shell. No unauthenticated temporary CRUD panel.
+
+- [ ] **TASK-108**: ShopSettings Singleton & Protected API (after TASK-102/103, TASK-501, TASK-005)
+  - [ ] Implement shop-owned BaseModel singleton, DB CHECK + UNIQUE key, bootstrap migration, no deletion/archive/deactivation, revision-based stale-write protection
+  - [ ] Add validated localized branding, landing, contact, link lists and metadata; explicit safe public serializer and SUPERADMIN editor/AUDITOR read-only API
+  - [ ] Ship minimal usable `/admin/shop` editor in this slice, with API authorization, validation and conflict states
+  - [ ] Verify constraints/concurrency, bootstrap, denied methods/roles, public allowlist and staff-save browser journey; follow admin/settings contract
+
+- [ ] **TASK-109**: Settings-Driven Storefront (with TASK-108; media picker after TASK-205)
+  - [ ] Replace hardcoded shop identity/landing/navigation/contact/footer/metadata with shared server-side settings loader; keep UI translations and catalog data separate
+  - [ ] Start uncached; verify fresh public content/metadata after save without redeploy, explicit fallback and Persian/English behavior
+  - [ ] Extend editor with approved media picker when presigned upload slice exists; no arbitrary URL fetching or executable content
+
+- [ ] **TASK-110**: Configurable About Page (later, after TASK-108/109)
+  - [ ] Add localized About content/publication fields, safe rendering and `/about` page with matching staff editor/API/tests; no generic CMS scaffolding now
+
 - [x] **TASK-101**: Abstract Base Models & Soft Delete Pattern
   - [x] Create `BaseModel` (`id: UUID`, `created_at`, `updated_at`, `deleted_at`, `is_active`, `is_deleted`)
   - [x] Implement `SoftDeleteManager` (`objects.all()` excludes soft-deleted records; `objects.all_with_deleted()` includes them)
-  - [x] Unit tests for soft-delete, restore, and cascade behavior
+  - [x] DB-backed integration tests for soft-delete, restore, and cascade behavior
 
 - [ ] **TASK-102**: Custom User & RBAC Model
   - [ ] Create custom `User` model using phone number as unique identifier
@@ -177,8 +277,10 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
 ## Phase 5: Custom Next.js Admin Panel (RBAC)
 
 - [ ] **TASK-501**: Admin Portal Shell & Authentication Guards
+  - [ ] Build alongside identity/auth in Phase 1, before additional model slices; Phase 5 completes specialist workflows, not initial CRUD
   - [ ] Dedicated `/admin` route layout with sidebar navigation
-  - [ ] Next.js middleware and backend permission classes enforcing role-based route access
+  - [ ] Server-side Next.js route checks and backend role/object permissions; middleware is supplemental, never sole authorization
+  - [ ] Controlled staff-account bootstrap, identity management screens, loading/error/empty states and keyboard/mobile navigation; no Django admin fallback
 
 - [ ] **TASK-502**: Product Manager Dashboard
   - [ ] Product and category CRUD data table
@@ -193,6 +295,7 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
 - [ ] **TASK-504**: Auditor Read-Only Reporting Dashboard
   - [ ] Comprehensive analytics and read-only views across catalog, customers, and orders
   - [ ] Mutation buttons disabled/hidden for Auditor role
+  - [ ] API rejects Auditor mutations even through direct requests; UI visibility alone is not authorization
 
 - [ ] **TASK-505**: Support Ticket Operations Desk
   - [ ] Support tickets datatable filtered by priority, status, and linked order
@@ -228,16 +331,46 @@ Live task tracking matrix for Full-Stack Online Shop. Status marks: `[ ]` Pendin
 
 ## Phase 7: Quality Assurance, Hardening & Deployment
 
-- [ ] **TASK-701**: Test-Driven Development (TDD) Model & Service Suite
-  - [ ] Complete Pytest unit and integration test suite with >85% code coverage
-  - [ ] Test reporting and coverage enforcement
+- [ ] **TASK-701**: Unit Test Coverage & TDD Quality Gate
+  - [ ] Pytest unit tests for isolated availability rules, discounts/coupons, order transitions, and template substitution; include boundary and failure cases
+  - [ ] Vitest unit tests for client validation/state logic and Three.js scene/material/disposal behavior
+  - [ ] Preserve existing DB-backed model tests as integration coverage under TASK-705, not isolated unit coverage
+  - [ ] Enforce existing minimum 85% backend coverage target across unit/integration tests; add client coverage reporting and set an explicit threshold
+  - [ ] Add CI gates for unit/integration tests, coverage, lint, and typecheck; coverage alone does not prove correctness
 
-- [ ] **TASK-702**: Playwright End-to-End Browser Testing
-  - [ ] E2E purchase flow: Browse -> Add to Cart -> OTP Login -> Address Select -> Checkout
+- [ ] **TASK-705**: Integration Test Coverage (after TASK-005; extend with each feature)
+  - [ ] DRF API tests for validation, authentication, RBAC, ownership boundaries, and persisted responses
+  - [ ] PostgreSQL model constraints, soft-delete/cascade behavior, JSONB/pgvector paths, rollback, and concurrent checkout with real transactions (exactly one winner for last stock item)
+  - [ ] Real Redis tests for OTP TTL/single-use/rate limits, cart merge, payment locks, and callback idempotency
+  - [ ] Availability summary invalidation and worker retry/idempotency tests; exercise real broker/worker for delivery behavior rather than relying only on Celery eager mode
+  - [ ] Presigned upload policy and test storage integration; payment/refund/SMS/email provider boundaries use controlled test adapters
+  - [ ] Acceptance: isolated fixtures and cleanup, reproducible success/failure cases, no production side effects
+
+- [ ] **TASK-702**: Playwright End-to-End Browser Testing (after TASK-005; extend with each journey)
+  - [ ] Run real browser against running Next.js and Django with seeded isolated services, not a mocked catalog/checkout API
+  - [ ] E2E purchase flow: Browse -> Add to Cart -> OTP Login -> Address Select -> Coupon -> Checkout -> Test Gateway Callback; assert persisted order outcome
   - [ ] E2E scored constraint: Verify purchase rejection outside time window
-  - [ ] E2E RBAC boundary tests: Verify access denial across staff roles
+  - [ ] E2E RBAC boundary tests: Verify access denial across staff roles, including direct navigation and API denial
+  - [ ] Persian/English RTL/LTR, localized values/dates, mobile layout, and keyboard-accessible critical controls
+  - [ ] Three.js load/controls/reset, unsupported WebGL, lost context/retry, and close/reopen (coordinate with TASK-3D-006)
+  - [ ] CI browser gate with traces/screenshots on failure; document seeds, startup, and cleanup; manual smoke checks do not complete this task
+
+- [x] **TASK-704**: Resolve Client Dependency Audit Findings
+  - [x] Review `npm --prefix client audit` findings affecting existing Next.js/PostCSS and Vitest dependencies
+  - [x] Upgrade Vitest and PostCSS with scoped compatibility overrides; retain Next.js 15, verify clean Docker install and lockfile
+  - [x] Re-run tests, typecheck, lint, build and browser smoke checks; audit reports 0 vulnerabilities
 
 - [ ] **TASK-703**: Production Dockerization & Hardening
   - [ ] Multi-stage Dockerfiles for frontend, backend API, and Celery worker
   - [ ] NGINX reverse proxy with TLS, security headers, and compression
   - [ ] Locust load test verifying 500 RPM checkout performance
+
+- [x] **TASK-INFRA-ENV**: Centralize local configuration in root `.env` for Compose, Django, and public frontend settings.
+
+- [x] **TASK-CLIENT-CHUNKS**: Isolate development output from production to prevent missing JavaScript chunks.
+
+- [x] **TASK-DEV-WORKFLOW**: Run Next.js with hot reload on port 3000 alongside Docker infrastructure; verify static assets and live changes.
+
+- [x] **TASK-DEV-RUNNER**: Install backend environment and run frontend/backend together with verified health endpoints. Runner uses server/.venv; dependencies installed, migrations applied, frontend and backend started together.
+
+- [x] **TASK-DOCKER-APPS**: Containerize frontend/backend development with source watch, isolated dependencies, health checks, and documented startup.

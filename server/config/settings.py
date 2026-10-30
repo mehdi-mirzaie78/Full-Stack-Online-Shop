@@ -17,14 +17,13 @@ env = environ.Env(
     CELERY_RESULT_BACKEND=(str, "redis://localhost:6379/1"),
 )
 
-environ.Env.read_env(BASE_DIR / ".env")
+environ.Env.read_env(BASE_DIR.parent / ".env")
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

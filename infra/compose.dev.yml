@@ -1,0 +1,87 @@
+# Development-only application services. Merge with docker-compose.yml.
+x-backend: &backend
+  build:
+    context: ../server
+    target: development
+  env_file: ../.env
+  environment: &backend-env
+    DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    REDIS_URL: redis://redis:6379/0
+    CELERY_BROKER_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
+    CELERY_RESULT_BACKEND: redis://redis:6379/1
+  init: true
+  develop:
+    watch:
+      - action: sync
+        path: ../server
+        target: /app/server
+        initial_sync: true
+        ignore: [.venv/, __pycache__/, .env, .env.*, requirements-dev.lock, pyproject.toml]
+      - action: rebuild
+        path: ../server/requirements-dev.lock
+      - action: rebuild
+        path: ../server/pyproject.toml
+
+services:
+  migrate:
+    <<: *backend
+    command: [python, manage.py, migrate, --noinput]
+    restart: "no"
+    develop: !reset null
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  server:
+    <<: *backend
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=5)"]
+      interval: 10s
+      timeout: 6s
+      retries: 12
+      start_period: 20s
+
+  client:
+    build:
+      context: ../client
+      target: development
+    init: true
+    environment:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_MEDIA_URL: ${NEXT_PUBLIC_MEDIA_URL}
+      NEXT_PUBLIC_DEFAULT_LOCALE: ${NEXT_PUBLIC_DEFAULT_LOCALE}
+      NEXT_PUBLIC_DEFAULT_DIR: ${NEXT_PUBLIC_DEFAULT_DIR}
+    ports:
+      - "127.0.0.1:${CLIENT_PORT:-3000}:3000"
+    depends_on:
+      server:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ../client
+          target: /app/client
+          initial_sync: true
+          ignore: [node_modules/, .next/, .next-dev/, .env, .env.*, package.json, package-lock.json, next-env.d.ts, tsconfig.tsbuildinfo]
+        - action: rebuild
+          path: ../client/package.json
+        - action: rebuild
+          path: ../client/package-lock.json
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
