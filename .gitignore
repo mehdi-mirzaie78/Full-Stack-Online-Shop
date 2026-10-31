@@ -48,6 +48,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .turbo/
+*.tsbuildinfo
 
 # Media / Static / Uploads
 media/
@@ -68,3 +69,6 @@ minio_data/
 postgres_data/
 redis_data/
 rabbitmq_data/
+
+# Separate Next.js development output
+.next-dev/

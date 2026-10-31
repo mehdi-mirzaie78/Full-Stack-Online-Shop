@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.urls import path
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -9,7 +8,6 @@ from drf_spectacular.views import (
 from apps.core.health import health_check, health_db, health_redis
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     # Global Health Check Endpoints
     path("api/health/", health_check, name="health-check"),
     path("api/health/db/", health_db, name="health-db"),

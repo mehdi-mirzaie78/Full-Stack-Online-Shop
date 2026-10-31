@@ -2,12 +2,53 @@
 
 Full relational and vector data schema for Full-Stack Online Shop, implemented with PostgreSQL 16 (`pgvector`).
 
+This is a target schema, not a list of completed migrations. Planned shop configuration follows [admin/settings contract](./docs/admin-and-shop-settings.md): one `ShopSettings` row per deployment, inherited UUID/timestamps, constant `singleton_key` enforced by CHECK + UNIQUE, bootstrap migration and no ordinary deletion/deactivation. TASK-108/109 deliver model/API/editor and settings-driven storefront; TASK-110 adds About later. Localized fixed fields and bounded validated link lists stay separate from catalog rules and secrets.
+
 ---
 
 ## Complete Domain Entity Relationship Diagram
 
 ```mermaid
 erDiagram
+    ShopSettings {
+        uuid id PK
+        smallint singleton_key UK "CHECK singleton_key = 1"
+        string name_fa
+        string name_en
+        string tagline_fa
+        string tagline_en
+        string logo_url
+        string favicon_url
+        string hero_title_fa
+        string hero_title_en
+        text hero_description_fa
+        text hero_description_en
+        string hero_image_url
+        string hero_cta_label_fa
+        string hero_cta_label_en
+        string hero_cta_url
+        string contact_email
+        string contact_phone
+        text address_fa
+        text address_en
+        jsonb navigation_links
+        jsonb social_links
+        jsonb footer_links
+        text footer_text_fa
+        text footer_text_en
+        string meta_title_fa
+        string meta_title_en
+        text meta_description_fa
+        text meta_description_en
+        string social_image_url
+        bigint revision
+        datetime created_at
+        datetime updated_at
+        boolean is_active "CHECK true"
+        boolean is_deleted "CHECK false"
+        datetime deleted_at "CHECK null"
+    }
+
     User ||--o| CustomerProfile : "has"
     User ||--o{ Address : "owns"
     CustomerProfile ||--o{ Order : "places"

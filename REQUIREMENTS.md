@@ -51,11 +51,23 @@ graph TD
 Complete entity relationship diagram and schema definitions are maintained in a dedicated specification file:
 👉 **[Detailed Entity Relationship Diagram (ERD.md)](./ERD.md)**
 
+### Domain-Driven Design (DDD)
+
+Use pragmatic DDD inside a **modular Django monolith**, not new microservices. [DDD guide](./docs/domain-driven-design.md) defines shared vocabulary, initial bounded contexts/ownership, aggregates/invariants, and implementation rules. The clusters below group entities for discussion; they are not aggregate or deployment boundaries.
+
+- Separate identity/customers, catalog, ordering, payments, support, media, and notifications logically; create apps/modules only when implementing real use cases. Keep cross-context writes behind owning application services and imports acyclic.
+- Django models protect local entity invariants; pure domain policies calculate decisions from explicit inputs/time. Application services coordinate loading, authorization, transactions/row locks, persistence, and follow-up work. APIs and Celery tasks dispatch those same use cases.
+- Checkout retains shared PostgreSQL atomicity across catalog inventory and ordering state; DDD does not justify weakening stock concurrency. Preserve order snapshots/audit records and define cross-context deletion behavior explicitly.
+- No duplicate ORM/domain entity hierarchies, generic repositories, speculative event bus, CQRS framework, or event sourcing. Use direct ORM and explicit calls first. After-commit callbacks avoid premature notifications but critical delivery requires durable recovery/idempotency.
+- TASK-006 records architectural adoption. TASK-007 must resolve digital versus physical product semantics, currency/rounding, availability boundaries, and canonical payment/fulfillment/reservation behavior before catalog/checkout modeling. Existing scored rules remain in force until agreed changes update this document and ERD.
+- Unit tests prove domain rules, integration tests prove transactions/context contracts, and E2E tests prove journeys. Implement one tested use case at a time; this document establishes conventions, not completed domain modules.
+
 ### Core Domain Clusters
 
 | Domain Cluster | Primary Entities | Key Responsibilities |
 | :--- | :--- | :--- |
 | **Identity & Users** | `User`, `CustomerProfile`, `Address` | Phone-based auth, RBAC roles, customer profile metadata, delivery addresses. |
+| **Shop Configuration** | `ShopSettings` (planned singleton) | Localized branding, landing content, navigation/contact/footer and metadata; later About content, not pricing/inventory/provider secrets. |
 | **Catalog & Rules** | `Category`, `Product`, `Discount`, `StoreSchedule`, `ProductAvailabilityWindow`, `ProductLeadTimeRule`, `ProductAvailabilitySummary` | Hierarchical categories, dynamic JSONB specs, rule engines (even-day windows, lead times), precomputed summary table. |
 | **Orders & Checkout** | `Order`, `OrderItem`, `Coupon`, `OrderAdjustment`, `OrderHistory`, `OrderVerificationCall` | Atomic stock reservation, coupon math, state machine, fulfillment queue reconciliation, operator verification. |
 | **Customer Engagement** | `SavedProduct`, `ProductReview`, `ProductSubscription` | Wishlist bookmarks, verified buyer reviews & ratings, restock/price-drop notifications. |
@@ -92,6 +104,8 @@ Complete entity relationship diagram and schema definitions are maintained in a 
   - `worker`: Background task worker.
   - `minio`: S3-compatible local bucket.
 - **Shared Standards**:
+  - Follow layered [AGENTS.md](./AGENTS.md): readable names, cohesive modules, DRY business-rule ownership, minimal abstractions and relevant tests on every change. Scoped client/server/infra guides avoid loading unrelated context.
+  - Model delivery includes permitted Next.js staff operations + protected API + tests. No Django admin UI/registrations; immutable history and derived data use safe inspection/actions. [Admin/settings contract](./docs/admin-and-shop-settings.md) defines acceptance.
   - Pre-commit hooks: Ruff (Python formatting/linting), ESLint + Prettier (TypeScript).
   - Git branching model: `main` (production), `develop` (staging), `feature/*` (work branches).
 - **Deliverable**: `docker compose up` spins all services healthy. Healthcheck endpoints green.
@@ -107,6 +121,8 @@ Complete entity relationship diagram and schema definitions are maintained in a 
   - `Address`: Province, city, postal code (10-digit regex), detailed body, recipient phone, default flag.
   - `SavedProduct` (Wishlist): Many-to-many link between Customer and Product with timestamp.
   - `Ticket` & `TicketMessage`: Support inquiries linked to customer and optional order reference; real-time messaging thread.
+  - `ShopSettings` (TASK-108): one UUID-based row per deployment; constant singleton key with DB CHECK + UNIQUE, bootstrap migration, no delete/archive/deactivation, revision-based stale-write protection. Explicit localized branding/landing/contact/metadata fields and bounded validated link lists. Safe public projection and authorized Next.js `/admin/shop` editor; secrets remain environment configuration.
+  - TASK-109 wires layout/landing/metadata to settings without redeploy (uncached initially); TASK-110 adds localized About page/editor later. Full planned fields/API/validation in [admin/settings contract](./docs/admin-and-shop-settings.md). No table/API/editor exists yet.
 - **Auth Engine**:
   - Endpoint: `POST /api/v1/auth/otp/request` -> generates 6-digit code, saves in Redis with 120s TTL, applies sliding rate limit (max 3 requests per 10 minutes per IP/phone).
   - Endpoint: `POST /api/v1/auth/otp/verify` -> validates code atomically, issues JWT pair (short-lived access + rotating refresh token).
@@ -141,6 +157,19 @@ Complete entity relationship diagram and schema definitions are maintained in a 
 - **Media Upload**:
   - `POST /api/v1/media/presign-upload` -> returns signed S3 URL for client direct upload.
 - **Deliverable**: Pytest tests validating category tree traversal, discount math with price capping, review submission & moderation, stock alert subscription, and availability rule edge cases.
+
+---
+
+### Parallel Learning Track: Three.js Material & Asset Previews
+
+**Goal**: Help customers inspect PBR materials and 3D assets while learning Three.js through small, tested components. This presentation layer does not change catalog, inventory, checkout, or fulfillment rules.
+
+- **Starter**: Native `three` with TypeScript, one opt-in material sphere, HTML color/roughness/metalness controls, orbit/reset, Persian/English labels, and a static sample when WebGL is unavailable.
+- **Architecture**: Browser-only dynamic import under Next.js App Router; on-demand rendering; bounded pixel ratio; explicit GPU/listener/observer cleanup. Keep initial content and purchase controls independent of canvas.
+- **Next components**: PBR texture inspector, catalog product preview, GLB turntable, then optional material comparison/shader exercises. Dependencies and acceptance criteria live in `TASK-3D-001` through `TASK-3D-006` in [tasks.md](./tasks.md).
+- **Media boundary**: Future preview metadata and upload contracts require approved asset URLs, types, byte/resource limits, and attribution. Public preview derivatives must not expose protected source downloads. Use existing S3 presigned-upload architecture; no media streaming through Django.
+- **Compatibility**: Web PBR approximates compatible exports, not arbitrary Unreal/HLSL/V-Ray/Corona shaders. No engine-equivalence claim.
+- **Deliverable**: Working learning lab plus [source tour and exercises](./docs/threejs-learning.md). Production product previews require browser failure/recovery checks and measured mobile performance budgets before release.
 
 ---
 
@@ -296,7 +325,7 @@ Complete entity relationship diagram and schema definitions are maintained in a 
       subgraph AccessPermissions["Permission Scopes"]
           P_FULL["System-wide Full Control"]
           P_CAT["Products, Categories & Discounts (CRUD)"]
-          P_ORD["Customers, Orders & Addresses (CRUD) + Call Queue"]
+          P_ORD["Permitted Customer/Address Operations + Order Actions + Call Queue"]
           P_RO["Read-Only Across Entire System"]
       end
 
@@ -306,9 +335,9 @@ Complete entity relationship diagram and schema definitions are maintained in a 
       AU --> P_RO
   ```
 - **Role Permissions Breakdown**:
-  - **Super Admin**: Unrestricted system-wide access, staff user management, and email template / policy configuration.
+  - **Super Admin**: System-wide permitted business operations, staff user management, shop settings and email template / policy configuration. Does not bypass audit immutability, singleton protections or order/payment invariants.
   - **Product Manager**: View, edit, delete, and create Products, Categories, Discounts, and Availability Windows. Review and moderate product reviews. No access to customer data or financial orders.
-  - **Operator**: View, edit, delete, and create Customers, Orders, and Addresses. Conducts phone verification calls and manages support ticket queues.
+  - **Operator**: Manage permitted Customer/Address operations and explicit order business actions, phone verification and support ticket queues. No arbitrary order/payment state edits or paid-history deletion.
   - **Auditor (Supervisor)**: System-wide read-only view. Full visibility into metrics, orders, audit logs, and catalog with zero mutation privileges.
 - **Key Views**:
   - Real-time order fulfillment kanban with telephone verification queue and adjustment logs.
@@ -319,7 +348,8 @@ Complete entity relationship diagram and schema definitions are maintained in a 
   - Bulk inventory and price adjustment matrix.
   - Dynamic specification editor using JSON schema forms.
   - Store schedule and availability window manager.
-- **Deliverable**: Next.js middleware and DRF permission classes enforcing role boundaries with 403 Forbidden checks.
+- **Delivery timing**: build minimum authenticated staff shell with identity/auth before subsequent managed models, then add permitted screens with each model. Phase 5 completes specialist workflows/polish, not first-time administration. Django auth/permissions remain; Django admin app/routes/registrations are excluded.
+- **Deliverable**: Server-side Next.js route authorization plus DRF role/object/use-case enforcement, with 403 Forbidden checks for direct requests; middleware/hidden buttons alone are insufficient. Editable models get usable CRUD/soft-delete/restore where safe; audit/derived/aggregate-child records use controlled actions/inspection. ShopSettings is detail/edit only, SUPERADMIN writes and AUDITOR reads.
 
 ---
 
@@ -363,22 +393,36 @@ Complete entity relationship diagram and schema definitions are maintained in a 
 
 ### Phase 7: Quality Assurance, Hardening & Deployment
 **Goal**: Production readiness, strict TDD methodology, and resilient performance benchmark.
+- **Required Layers & Timing**:
+  - Unit, integration, and E2E tests are all required. Integration tests prove component/service boundaries; E2E tests prove browser journeys. Neither replaces the other.
+  - Add relevant tests during every feature phase; this phase completes coverage and release enforcement. TASK-005 establishes the harness early; TASK-701, TASK-705, and TASK-702 own unit, integration, and E2E gaps respectively.
+  - Current implementation is partial: Vitest Three.js unit tests, PostgreSQL-backed BaseModel tests, and health endpoint tests with mocked dependency checks exist. Playwright dependency/configuration and automated E2E tests do not yet exist. Manual browser smoke checks are not an E2E suite.
 - **Test-Driven Development (TDD) Strategy**:
-  - Red-Green-Refactor enforced across all domain engines (Availability, Discount math, Row-level inventory locking).
-  - Target: Minimum 85% test coverage (surpassing legacy 30% model test criteria).
-- **Test Matrix**:
-  - **Unit Tests**:
-    - `test_models.py`: Model constraints, UUID primary keys, soft-delete manager filters (`is_deleted=False`).
-    - `test_discounts.py`: Percentage discounts with ceiling caps, fixed discounts, expired coupons.
-    - `test_availability.py`: Time-window constraints (even days 16:00-20:00), lead-time constraints (3h before close, 10h before open), summary table cache sync.
-  - **Integration Tests**:
-    - `test_checkout_concurrency.py`: Simulates 10 concurrent requests purchasing last item in stock. Exact 1 commits, 9 fail with 409 Conflict.
-    - `test_payment_idempotency.py`: Replay attacks on payment webhook return identical cached success without duplicate order fulfillment.
-  - **E2E Browser Automation (Playwright)**:
-    - Scored flow test: Guest adds to cart -> Log in via OTP -> Select address -> Apply coupon -> Checkout -> Gateway callback.
-    - Scored rule test: Attempt purchase outside even-day 16:00-20:00 window -> Assert rejection error banner.
-    - RBAC test: Product Manager denied access to order endpoints; Operator denied access to discount creation; Auditor denied all mutation requests.
-    - Multilingual & RTL test: Toggle fa-IR / en-US -> Verify layout flips (RTL/LTR), Shamsi/Gregorian dates render properly, numbers format as localized currency.
+  - Red-Green-Refactor enforced across domain engines. Cover normal, boundary, invalid-input, and failure behavior.
+  - Target: Minimum 85% backend coverage across unit/integration tests; report client coverage and define its threshold under TASK-701. Critical assertions and E2E journeys remain required regardless of coverage percentage.
+- **Test Matrix** (future filenames below are illustrative, not claims of existing files):
+  - **Unit Tests — Pytest / Vitest**:
+    - `test_discounts.py`: Pure discount/coupon calculations with percentage caps, fixed amounts, and expiry boundaries.
+    - `test_availability.py`: Isolated time-window and lead-time calculations with controlled time; persistence/cache invalidation belongs in integration tests.
+    - Pure order transition and template substitution rules; client validation/cart logic as introduced.
+    - Three.js scene construction, material values, owned resource disposal, and preview error notification without a GPU.
+  - **Integration Tests — Pytest / DRF APIClient + Isolated Services**:
+    - Existing `server/tests/test_base_model.py`: Real PostgreSQL persistence, UUID/defaults, soft-delete manager filtering, restore, and cascade behavior.
+    - API request validation, auth/RBAC/ownership, status codes, response schema, and persisted changes; mocked health checks do not prove live DB/Redis connectivity.
+    - `test_checkout_concurrency.py`: Real transactions with 10 concurrent requests for last stock item; exactly one commits, nine receive 409 Conflict; verify rollback on failure.
+    - `test_payment_idempotency.py`: Real Redis atomic locks plus PostgreSQL updates; callback replays cannot double-charge or fulfill twice.
+    - Redis OTP TTL, single-use verification, rate limits, cart merge; summary invalidation after rule mutations; JSONB/pgvector queries.
+    - Worker retry/idempotency and broker delivery behavior, test storage/presigned upload policy; isolate third-party payment/refund/SMS/email via controlled adapters.
+  - **E2E Browser Automation — Playwright**:
+    - Run real browser against running Next.js, Django, and isolated services with deterministic seeds; mocked API browser tests are supplemental, not proof of full-stack journeys.
+    - Purchase flow: Guest adds to cart -> OTP login -> Address -> Coupon -> Checkout -> Test gateway callback; assert persisted order outcome.
+    - Availability rejection outside allowed window, RBAC denial for direct routes/API, and ownership protection.
+    - Persian/English RTL/LTR, Shamsi/Gregorian dates, localized currency, mobile layout, and keyboard-accessible purchase controls.
+    - Three.js opt-in load, material controls/reset, unsupported WebGL, lost context/retry, and close/reopen; coordinate with TASK-3D-006. Development Strict Mode gets a separate browser regression check.
+- **Isolation & Release Gates**:
+  - PostgreSQL test DB only; never SQLite. Use isolated Redis keys/database and test storage, deterministic time/data, and cleanup. Never use production data or trigger real charges/messages.
+  - Run unit/integration checks, lint, typecheck, and browser E2E in CI with coverage reports and browser failure traces/screenshots. Missing dependencies must fail clearly; record unrun checks rather than claim success.
+  - Current root `npm run test` runs Vitest then Pytest, not E2E. Separate layer commands, discovery/markers, Playwright install/configuration, service startup, seed/reset, and CI wiring remain TASK-005 / TASK-701 / TASK-702 work.
 - **Load Testing**:
   - Locust test verifying 500 RPM on checkout endpoints under load.
 - **Production Container Build**:
