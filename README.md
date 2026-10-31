@@ -97,8 +97,8 @@ All three layers are required; integration and E2E are not interchangeable. Add 
 | Layer | Purpose / tools | Current repository status |
 | --- | --- | --- |
 | Unit | Isolated business logic with Pytest; client logic and Three.js scene behavior with Vitest | Client Three.js tests exist; broader domain coverage remains planned |
-| Integration | API/service boundaries, real PostgreSQL persistence/transactions and Redis behavior with Pytest + DRF APIClient | DB-backed BaseModel tests and mocked health endpoint tests exist; real Redis/worker/storage and business API coverage remain planned |
-| E2E | User journeys in a real browser with Playwright against running client/API | Playwright dependency, configuration, and automated E2E suite are not yet added; earlier browser smoke checks are manual validation only |
+| Integration | API/service boundaries, real PostgreSQL persistence/transactions and Redis behavior with Pytest + DRF APIClient | PostgreSQL BaseModel and real DB/Redis health checks exist; worker/storage and business API coverage remain planned |
+| E2E | User journeys in a real browser with Playwright against running client/API | Playwright storefront, browser-error and WebGL fallback smoke checks exist; business API journeys remain planned |
 
 Existing commands, from repository root:
 
@@ -108,9 +108,15 @@ npm --prefix client run test
 npm run test
 ```
 
-Backend checks require installed Python dev dependencies and PostgreSQL test DB access; integration cases need their isolated services too. `npm run test` currently chains Vitest and Pytest, **not E2E**. `npx playwright test` from `client` is a future command after TASK-005 setup, not a working suite today.
+Backend checks require installed Python dev dependencies and PostgreSQL test DB access; integration cases need their isolated services too. `npm run test` currently chains Vitest and Pytest, **not E2E**. Build client, then run `npm --prefix client run test:e2e` for production browser smoke; install Chromium first as documented in testing guide.
 
 Required coverage, isolation rules, and release gates: [testing guide](./docs/development/testing.md), [REQUIREMENTS.md](./REQUIREMENTS.md#phase-7-quality-assurance-hardening--deployment), and TASK-005 / TASK-701 / TASK-702 / TASK-705 in [tasks.md](./tasks.md).
+
+## Private observability and CI
+
+Self-hosted Grafana, Loki, Tempo, Prometheus and Alloy provide searchable JSON logs, trace correlation and metrics without a cloud logging account. Optional Docker overlay, local password-file setup, retention and diagnostics: [observability runbook](./docs/development/observability.md).
+
+[CI workflow](./.github/workflows/ci.yml) checks lint/types, client tests/build, backend tests with 85% runtime coverage, browser smoke and isolated telemetry. Repository owner must separately enable required branch checks.
 
 ## Documentation & Roadmap
 

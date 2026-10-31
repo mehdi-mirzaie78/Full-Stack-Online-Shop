@@ -33,6 +33,9 @@ services:
         condition: service_healthy
 
   server:
+    labels:
+      observability.logs: "true"
+      observability.scope: development
     <<: *backend
     ports:
       - "127.0.0.1:${SERVER_PORT:-8000}:8000"
@@ -53,6 +56,9 @@ services:
       start_period: 20s
 
   client:
+    labels:
+      observability.logs: "true"
+      observability.scope: development
     build:
       context: ../client
       target: development

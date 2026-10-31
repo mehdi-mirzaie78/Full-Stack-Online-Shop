@@ -16,9 +16,9 @@ def check_database() -> tuple[bool, str]:
             cursor.execute("SELECT 1;")
             cursor.fetchone()
         return True, "ok"
-    except Exception as exc:
-        logger.error("Health check database failure: %s", exc)
-        return False, str(exc)
+    except Exception:
+        logger.exception("database_unavailable", extra={"event": "database_unavailable"})
+        return False, "unavailable"
 
 
 def check_redis() -> tuple[bool, str]:
@@ -27,10 +27,11 @@ def check_redis() -> tuple[bool, str]:
         val = cache.get("health_ping")
         if val == "pong":
             return True, "ok"
+        logger.warning("cache_mismatch", extra={"event": "cache_mismatch"})
         return False, "cache read mismatch"
-    except Exception as exc:
-        logger.error("Health check redis failure: %s", exc)
-        return False, str(exc)
+    except Exception:
+        logger.exception("redis_unavailable", extra={"event": "redis_unavailable"})
+        return False, "unavailable"
 
 
 @api_view(["GET"])

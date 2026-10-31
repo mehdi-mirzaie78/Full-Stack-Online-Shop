@@ -1,0 +1,48 @@
+rule_files: [/etc/prometheus/alerts.yml]
+evaluation_interval: 1m
+tests:
+  - name: no traffic
+    interval: 1m
+    input_series:
+      - series: 'up{job="alloy"}'
+        values: '1+0x15'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ApplicationErrorRatio
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: ApplicationLatency
+        exp_alerts: []
+  - name: service down
+    interval: 1m
+    input_series:
+      - series: 'up{job="alloy"}'
+        values: '0+0x15'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TelemetryTargetDown
+        exp_alerts:
+          - exp_labels: {job: alloy, severity: warning}
+            exp_annotations:
+              summary: Local telemetry target unavailable
+  - name: healthy traffic
+    interval: 1m
+    input_series:
+      - series: 'traces_span_metrics_calls_total{service_name="django",span_kind="SPAN_KIND_SERVER",status_code="STATUS_CODE_OK"}'
+        values: '0+60x15'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ApplicationErrorRatio
+        exp_alerts: []
+  - name: sustained failures
+    interval: 1m
+    input_series:
+      - series: 'traces_span_metrics_calls_total{service_name="django",span_kind="SPAN_KIND_SERVER",status_code="STATUS_CODE_ERROR"}'
+        values: '0+60x15'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ApplicationErrorRatio
+        exp_alerts:
+          - exp_labels: {service_name: django, severity: warning}
+            exp_annotations:
+              summary: Observed server error ratio above five percent

@@ -1,0 +1,26 @@
+{
+  "services": {
+    "server": {
+      "image": "python:3.12.12-alpine@sha256:2d91681153dd4b8cdb52d4fd34a17b9edbafa4dd3086143cfd4b6c3a84c1acb0",
+      "command": [
+        "python",
+        "-u",
+        "/fixture.py"
+      ],
+      "volumes": [
+        "./observability/fixture.py:/fixture.py:ro"
+      ],
+      "ports": [
+        "127.0.0.1:${OBS_FIXTURE_PORT:-18080}:8080"
+      ],
+      "labels": {
+        "observability.logs": "true",
+        "observability.scope": "${OBS_LOG_SCOPE:?unique fixture scope}"
+      },
+      "networks": [
+        "default",
+        "collector-api"
+      ]
+    }
+  }
+}

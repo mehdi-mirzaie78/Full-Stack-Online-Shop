@@ -12,6 +12,9 @@ Delivery rule: follow [layered instructions](./AGENTS.md) and [admin/settings co
 
 ## Phase 0: Project Scaffolding & Infrastructure Foundations
 
+- [x] **TASK-OBS-CI**: Safe logging, correlation and five CI gates verified. Review fixes prevent Celery worker formatter bypass and trace-header leakage through redirects, with failing-then-passing regressions. Final local checks: 46 backend tests / 93.80% coverage; 21 client tests; 3 browser tests; lint/types/build; Django checks/migration drift; workflow contract and full disposable telemetry smoke including runtime Grafana correlation templates. Hosted Actions and branch protection remain owner follow-up after authorized push; no business checkout waterfall claimed.
+- [x] **TASK-OBS-LOCAL**: Optional private Docker Grafana/Loki/Tempo/Prometheus/Alloy stack, digest-pinned images, provisioned dashboards, retention and restricted socket proxy. Disposable full smoke passed Docker collection, log/trace privacy, existing route retention, metrics, dashboard queries and restart persistence; production-style setup still needs user-owned Grafana password file. Multi-day expiration and browser trace-link clicking not claimed.
+
 - [x] **TASK-010**: Review Fixes & Bilingual Typography Consistency
   - [x] Centralize English/Persian body/heading rhythm; fix slider labels, add explicit page-reload failed-import recovery and phase-aware root environment loading
   - [x] Audit clean; 10 client tests, 15 backend tests, typecheck/lint/build and browser spacing/labels/reload/mobile checks pass; clean Docker npm 10 install and client tests pass

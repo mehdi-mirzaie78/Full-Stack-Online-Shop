@@ -1,0 +1,103 @@
+{
+  "uid": "shop-logs",
+  "title": "Shop logs",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Approved application events",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=~\"$service\"} | json | level=~\"$level\" | request_id=~\"$request_id\" | trace_id=~\"$trace_id\" |~ \"$search\""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "custom",
+        "query": "server,client",
+        "current": {
+          "text": "server",
+          "value": "server"
+        },
+        "label": "service"
+      },
+      {
+        "name": "level",
+        "type": "custom",
+        "query": "INFO,WARNING,WARN,ERROR,CRITICAL,DEBUG",
+        "current": {
+          "text": ".*",
+          "value": ".*"
+        },
+        "label": "level"
+      },
+      {
+        "name": "request_id",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": ".*",
+          "value": ".*"
+        },
+        "label": "request_id"
+      },
+      {
+        "name": "trace_id",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": ".*",
+          "value": ".*"
+        },
+        "label": "trace_id"
+      },
+      {
+        "name": "search",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "label": "search"
+      }
+    ]
+  },
+  "links": [
+    {
+      "title": "Explore logs",
+      "url": "/explore?left=%7B%22datasource%22:%22loki%22%7D"
+    },
+    {
+      "title": "Explore traces",
+      "url": "/explore?left=%7B%22datasource%22:%22tempo%22%7D"
+    }
+  ]
+}
