@@ -41,3 +41,11 @@ AWS_S3_ENDPOINT_URL = "http://127.0.0.1:59000"
 AWS_S3_REGION_NAME = "us-east-1"
 OTEL_ENABLED = False
 OTEL_EXPORTER_OTLP_ENDPOINT = ""
+
+AUTH_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:3100"]
+CORS_ALLOWED_ORIGINS = ["http://127.0.0.1:3100"]
+TESTING_SMS_SENDER = True
+
+JWT_SECRET_KEY = "isolated-test-jwt-signing-key-not-for-production"

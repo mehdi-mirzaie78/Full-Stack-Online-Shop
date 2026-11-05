@@ -4,7 +4,7 @@
 
 Use pragmatic domain-driven design (DDD) for new backend features. DDD starts with understanding business behavior and using its language in code; it is not a framework, directory template, or requirement for microservices.
 
-Keep one modular Django backend and shared PostgreSQL database, plus existing infrastructure and Next.js client. Only core shared models and health endpoints currently exist in the backend. Context/app names and methods below are proposed targets, not implemented symbols. Introduce a module when its first use case needs it; do not generate empty layers or rewrite `BaseModel` to demonstrate DDD.
+Keep one modular Django backend and shared PostgreSQL database, plus existing infrastructure and Next.js client. Core shared models, health endpoints, and the first identity slice (User/roles, OTP/JWT LoginSession and protected staff management) exist in the backend. Customer profiles and addresses remain planned. See [identity contract](./development/identity.md). Context/app names and methods below are proposed targets, not implemented symbols. Introduce a module when its first use case needs it; do not generate empty layers or rewrite `BaseModel` to demonstrate DDD.
 
 Existing requirements and ERD remain business specifications. This guide assigns ownership and implementation conventions; unresolved policy conflicts require TASK-007, not an invented rule.
 

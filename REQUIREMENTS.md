@@ -116,6 +116,7 @@ Use pragmatic DDD inside a **modular Django monolith**, not new microservices. [
 **Goal**: Secure authentication, profile management, multi-address support, wishlist, and ticket desk.
 - **Data Models**:
   - `BaseModel`: UUID primary key, `created_at`, `updated_at`, `deleted_at`, `is_active` (soft-delete with custom manager).
+  - Implementation status: User/roles, LoginSession, OTP/JWT cookies, and protected staff identity operations are implemented; real SMS delivery awaits provider selection. Profiles/addresses remain planned. See [identity contract](./docs/development/identity.md).
   - `User`: Phone number unique identifier, hashed password, role enum (`SUPERADMIN`, `PRODUCT_MANAGER`, `OPERATOR`, `AUDITOR`, `CUSTOMER`).
   - `CustomerProfile`: 1-to-1 with User, avatar URL, national code, age, gender.
   - `Address`: Province, city, postal code (10-digit regex), detailed body, recipient phone, default flag.

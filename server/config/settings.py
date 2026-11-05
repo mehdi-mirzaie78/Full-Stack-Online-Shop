@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "apps.core",
+    "apps.identity",
 ]
 
 MIDDLEWARE = [
@@ -100,7 +101,16 @@ CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 CORS_ALLOW_CREDENTIALS = True
 
 # Django REST Framework
+AUTH_USER_MODEL = "identity.User"
+JWT_SECRET_KEY = env.str("JWT_SECRET_KEY", default=SECRET_KEY)
+AUTH_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+TESTING_SMS_SENDER = False
+DEV_SMS_REDIS = env.bool("DEV_SMS_REDIS", default=False)
+
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["apps.identity.authentication.CookieAuthentication"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",

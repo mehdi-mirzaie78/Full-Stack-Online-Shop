@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -8,6 +8,7 @@ from drf_spectacular.views import (
 from apps.core.health import health_check, health_db, health_redis
 
 urlpatterns = [
+    path("api/v1/", include("apps.identity.urls")),
     # Global Health Check Endpoints
     path("api/health/", health_check, name="health-check"),
     path("api/health/db/", health_db, name="health-db"),

@@ -4,6 +4,8 @@ Full relational and vector data schema for Full-Stack Online Shop, implemented w
 
 This is a target schema, not a list of completed migrations. Planned shop configuration follows [admin/settings contract](./docs/admin-and-shop-settings.md): one `ShopSettings` row per deployment, inherited UUID/timestamps, constant `singleton_key` enforced by CHECK + UNIQUE, bootstrap migration and no ordinary deletion/deactivation. TASK-108/109 deliver model/API/editor and settings-driven storefront; TASK-110 adds About later. Localized fixed fields and bounded validated link lists stay separate from catalog rules and secrets.
 
+User and LoginSession are implemented in the identity slice. LoginSession is revocable/inspectable through protected staff operations, not general CRUD. Customer profiles/addresses and other domain entities remain planned. See [identity contract](./docs/development/identity.md).
+
 ---
 
 ## Complete Domain Entity Relationship Diagram
@@ -49,6 +51,7 @@ erDiagram
         datetime deleted_at "CHECK null"
     }
 
+    User ||--o{ LoginSession : "authenticates with"
     User ||--o| CustomerProfile : "has"
     User ||--o{ Address : "owns"
     CustomerProfile ||--o{ Order : "places"
@@ -79,12 +82,21 @@ erDiagram
 
     User {
         uuid id PK
-        string phone_number UK
+        string phone UK
         string hashed_password
         string role "SUPERADMIN | PRODUCT_MANAGER | OPERATOR | AUDITOR | CUSTOMER"
         boolean is_active
         datetime created_at
         datetime updated_at
+    }
+
+    LoginSession {
+        uuid id PK
+        uuid user_id FK
+        string refresh_digest "private; not in API projection"
+        datetime expires_at
+        datetime revoked_at
+        datetime created_at
     }
 
     CustomerProfile {
