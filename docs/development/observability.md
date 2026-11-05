@@ -65,7 +65,7 @@ Browser console events are not automatically uploaded to Loki. Central browser r
 
 ## CI
 
-`.github/workflows/ci.yml` separates static checks, client tests/build, server tests/coverage, browser smoke and private telemetry validation. A failed gate must fail the job; unavailable dependencies must not silently skip tests.
+`.github/workflows/ci.yml` separates static checks, client tests/build, server tests/coverage, browser smoke and private telemetry validation. Telemetry CI pulls missing digest-pinned images before startup, retrying selected transient registry failures up to three attempts with 5s/10s delays. Permanent pull errors and exhausted retries fail the job; telemetry assertions are never retried. A failed gate must fail the job; unavailable dependencies must not silently skip tests.
 
 Server CI uses isolated PostgreSQL/Redis with synthetic credentials. Browser smoke covers current storefront/error recovery, not future checkout/auth/RBAC journeys. Synthetic telemetry in CI does not include workstation data. Never upload telemetry volumes, root `.env`, environment dumps or real provider errors as artifacts.
 
