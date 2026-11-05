@@ -53,6 +53,7 @@ try {
     assert.equal(process.env.CONFIG_ROOT_ONLY, undefined);
     assert.equal(process.env.NEXT_PUBLIC_API_URL, "http://127.0.0.1:8100/api/v1");
     assert.equal(config.distDir, ".next-test");
+    assert.equal(config.typescript.tsconfigPath, "tsconfig.test.json");
   } else {
     assert.equal(process.env.CONFIG_SHARED, "root", "root env must replace cached client env");
     assert.equal(process.env.CONFIG_ROOT_ONLY, "root");
@@ -62,6 +63,7 @@ try {
     assert.equal(process.env.CONFIG_LOCAL, mode + "-local");
     assert.equal(process.env.CONFIG_EXPANDED, "root/expanded");
     assert.equal(config.distDir, development ? ".next-dev" : ".next");
+    assert.equal(config.typescript.tsconfigPath, "tsconfig.json");
   }
 } finally {
   fs.rmSync(root, { recursive: true, force: true });

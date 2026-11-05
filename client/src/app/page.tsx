@@ -1,18 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Box, Layers, Cpu, Sparkles, Check, X, Globe } from "lucide-react";
+import { useIdentityLanguage } from "@/components/identity/language";
+import { Box, Layers, Cpu, Sparkles, Check, X } from "lucide-react";
 import MaterialLab from "@/components/three/material-lab";
 
 export default function HomePage() {
-  const [direction, setDirection] = useState<"rtl" | "ltr">("rtl");
-
-  const toggleDirection = () => {
-    const nextDir = direction === "rtl" ? "ltr" : "rtl";
-    setDirection(nextDir);
-    document.documentElement.setAttribute("dir", nextDir);
-    document.documentElement.setAttribute("lang", nextDir === "rtl" ? "fa" : "en");
-  };
+  const { persian } = useIdentityLanguage();
+  const direction = persian ? "rtl" : "ltr";
 
   const sampleProducts = [
     {
@@ -74,15 +68,7 @@ export default function HomePage() {
               : "Built for 3D technical artists, UE environment artists, and 3ds Max rendering pipelines. Instant downloads and verified PBR maps."}
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 pt-4">
-            <button
-              onClick={toggleDirection}
-              className="inline-flex items-center gap-2 rounded-lg border border-neon-cyan bg-neon-cyan/15 px-4 py-2.5 text-sm font-semibold text-neon-cyan hover:bg-neon-cyan/25 transition-all shadow-sm"
-            >
-              <Globe className="h-4 w-4" />
-              <span>{direction === "rtl" ? "تغییر جهت به چپ‌به‌راست (LTR)" : "Switch to RTL (راست‌به‌چپ)"}</span>
-            </button>
-          </div>
+
         </div>
       </section>
 

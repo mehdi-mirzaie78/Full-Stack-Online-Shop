@@ -95,3 +95,8 @@
     linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
 }
+
+.identity-login { border: 1px solid #334155; border-radius: 1.75rem; background: #0f172a; box-shadow: 0 24px 80px #0005; border-top: 3px solid #67e8f9; }
+.identity-login h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1.35; }
+.identity-login label { display: block; font-weight: 500; }
+.identity-login input { margin-top: .6rem; }

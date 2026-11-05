@@ -12,6 +12,7 @@ const nextConfig = (phase: string): NextConfig => {
 
   return {
     distDir: testing ? ".next-test" : development ? ".next-dev" : ".next",
+    typescript: { tsconfigPath: testing ? "tsconfig.test.json" : "tsconfig.json" },
     reactStrictMode: true,
     images: {
       remotePatterns: [
