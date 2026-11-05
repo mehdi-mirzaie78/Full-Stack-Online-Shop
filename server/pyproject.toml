@@ -63,7 +63,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings"
+DJANGO_SETTINGS_MODULE = "config.test_settings"
 python_files = ["test_*.py", "*_test.py"]
 addopts = "-v --tb=short"
-markers = ["integration: exercises real PostgreSQL or Redis"]
+markers = ["integration: exercises real PostgreSQL, Redis, or S3"]

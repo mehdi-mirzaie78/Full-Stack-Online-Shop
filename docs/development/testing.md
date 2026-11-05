@@ -14,13 +14,87 @@ Applies with [root instructions](../../AGENTS.md) and relevant client/server gui
 - ShopSettings tests must prove DB singleton enforcement under concurrency, bootstrap, deletion/deactivation denial, unauthorized writes, safe public projection, URL/content validation, and stale-update conflict handling. E2E: staff edits shop content; fresh public request shows new content/metadata without redeploy and without stale cached branding.
 - Django `/admin/` must remain absent; preserve Django auth/permissions and other health/API routes.
 
-## Commands and gates
+## Local commands and isolated resources
 
-- Client: `npm --prefix client run test`, `npm --prefix client run typecheck`, `npm --prefix client run lint`, `npm --prefix client run build`.
-- Server: activate `server/.venv`, then inside server run `pytest -v --cov=.` and `ruff check .`. Root `npm run test` / `npm run lint` chain client + server; Python tools must be on PATH.
-- Browser: `npm --prefix client exec -- playwright install --with-deps chromium`, then build client and run `npm --prefix client run test:e2e`. Playwright starts production Next on 127.0.0.1:3100; no reuse of development servers. If browser download is unavailable and Chrome is installed, explicitly set `E2E_BROWSER_CHANNEL=chrome`. `E2E_API_URL=http://127.0.0.1:8100` adds fail-closed real health probing; omit it for frontend-only smoke.
-- Unit/integration discovery: `npm --prefix client run test:unit`; inside server `pytest -m 'not integration'` and `pytest -m integration`. Backend service checks require dedicated PostgreSQL/Redis, e.g. DATABASE_URL on test port 55432 and REDIS_URL on 56379 DB 15; never point tests at development/production data. CI provides isolated services automatically.
-- Existing coverage includes safe JSON/error/telemetry unit checks, PostgreSQL BaseModel tests, real PostgreSQL/Redis health checks, and three browser storefront/error/fallback smoke tests. Current storefront smoke is not a backend business journey. Broader purchase/auth/RBAC/worker/storage integration and E2E remain pending under TASK-005 / TASK-701 / TASK-705 / TASK-702 / TASK-3D-006.
+Install the root/client lockfiles and `server/requirements-dev.lock` first (Python 3.12,
+Node.js 22 in CI). Docker Compose and Docker socket access are needed for integration
+and E2E; unit tests need no services. The root runners use `server/.venv/bin/python`
+when present, otherwise the invoking Python (CI installs dependencies there).
+
+```sh
+npm run test:unit         # Script regressions, Vitest, and backend unit tests
+npm run test:integration  # Real PostgreSQL, Redis, and S3 tests
+npm run test:e2e          # Build test client, migrate/start test API, run Playwright
+npm run test:all          # All layers, including 85% backend runtime coverage gate
+```
+
+Install Chromium once using `npm --prefix client exec -- playwright install --with-deps chromium`.
+If Chrome is already installed, use `E2E_BROWSER_CHANNEL=chrome npm run test:all`
+(or the same prefix on `test:e2e`). Browser downloads can use `HTTPS_PROXY` during
+installation; the test runner discards inherited proxies so local requests stay local.
+The harness does not install missing dependencies or silently skip missing services.
+
+| Resource | Test address / identifier |
+| --- | --- |
+| Compose project | `shop-tests`, standalone `infra/compose.test.yml` |
+| PostgreSQL | `127.0.0.1:55432`, `shop_test`; Pytest creates/drops `test_shop_test` |
+| Redis | `127.0.0.1:56379`, database 15, key prefix `shop-tests` |
+| SeaweedFS S3 | `http://127.0.0.1:59000`, test-only credentials, `shop-test-media` |
+| Django API | `http://127.0.0.1:8100`, `config.test_settings` |
+| Next.js | `http://127.0.0.1:3100`, `.next-test` build output |
+
+The root runner starts fresh test containers, waits for health, and removes the
+`shop-tests` containers/network/anonymous volumes in `finally`, including failed
+startup/tests. PostgreSQL and S3 use tmpfs; Redis persistence is disabled. Development
+containers, volumes, ports, and `.env` are not used. Fixed ports and an exclusive
+local lock reject concurrent runs instead of sharing mutable fixtures. Avoid manually
+binding these test ports to unrelated services. Do not merge the test Compose file
+with development files or put real data in the test stack.
+
+For focused debugging, `npm run test:infra:up` leaves services running. Activate
+`server/.venv`, then from `server` use `pytest -m integration` or a single test.
+`npm run test:infra:down` removes only test resources; this is also the recovery
+command after forced termination or machine shutdown. A managed integration/E2E run
+resets any retained test stack before starting. The existing root `npm run test`
+still chains Vitest and Pytest without managing services or running E2E; prefer
+`test:all` for the complete managed workflow. Root `npm run lint` needs Python tools
+on PATH; client-only checks remain `npm --prefix client run lint` / `typecheck`.
+
+## Fixtures, delivery safety, and artifacts
+
+Backend tests default to `config.test_settings`, which skips root `.env`, fixes DB,
+cache, and S3 addresses, and overrides inherited service URLs. Pytest rejects development
+settings. Database fixtures use Django's isolated test DB; BaseModel rows use explicit
+example data and rollback between tests. S3 tests get a unique bucket with fixed object
+contents and remove its objects/bucket on teardown. The browser API uses only freshly
+migrated test data; the present storefront has no business entities to seed yet.
+Future model slices must add deterministic factories and browser fixtures alongside
+the feature rather than seed real customer data.
+
+Email uses Django's in-memory outbox; Celery uses eager execution and in-memory
+broker/results. Eager mode does not prove real broker delivery. Autouse Pytest socket
+checks block external hosts and service access from unit tests; integration tests
+allow only the three local test ports. A telemetry unit test explicitly allows its
+own ephemeral receiver port. These Python socket checks do not sandbox subprocesses
+or native libraries. Keep provider credentials out of tests and stub those boundaries.
+Payment/SMS modules do not exist yet: add their fake adapters and outcome fixtures
+with their owning feature, before any real provider integration. No placeholder
+payment/SMS framework is introduced by this harness.
+
+Test browser build/start discards cached client environment files and does not load
+root `.env`. The runner fixes public API/media URLs to the isolated services. Managed E2E
+always starts its own API and production Next server, refuses existing server reuse,
+and checks real API health. It currently proves storefront language switching,
+browser error privacy, and unsupported WebGL fallback—not purchase/auth journeys.
+
+Artifacts survive service cleanup: `server/server.junit.xml`, `server/coverage.xml`
+(full backend run), `test-results/api.log`, `client/playwright-report/`, and
+`client/test-results/` (failure screenshots/traces). Open browser reports with
+`npm --prefix client exec -- playwright show-report`. CI uses the same backend/E2E
+runner and uploads these artifacts; hosted Actions verification requires a push.
+
+## Gates
+
 - Private collector validation: `python3 scripts/check_observability.py --static` or full disposable `npm run test:observability`; see [observability runbook](./observability.md). CI runs five independent gates; no real workstation logs or telemetry volumes are uploaded.
 - Minimum backend coverage target 85% across unit/integration; client reporting/threshold under TASK-701. Add CI gates for tests, coverage, lint, typecheck, and browser failure traces/screenshots. Coverage does not replace critical behavioral assertions.
 - Never production data, charges, SMS, or email sends. Use PostgreSQL test DBs (never SQLite), isolated Redis keys/database and test storage, deterministic time/fixtures, cleanup, and controlled external adapters.

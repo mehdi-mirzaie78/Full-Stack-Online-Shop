@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { ESLint } from "eslint";
 import { describe, it } from "vitest";
 
 const checkConfig = String.raw`
@@ -10,6 +11,7 @@ const path = require("node:path");
 const Module = require("node:module");
 const configPath = process.argv[1];
 const phase = process.argv[2];
+const testing = process.argv[3] === "test";
 const development = phase === "phase-development-server";
 const mode = development ? "development" : "production";
 const requireClient = Module.createRequire(configPath);
@@ -45,20 +47,34 @@ try {
   configModule._compile(compiled, fixtureConfig);
   const config = configModule.exports.default(phase);
 
-  assert.equal(process.env.CONFIG_SHARED, "root", "root env must replace cached client env");
-  assert.equal(process.env.CONFIG_ROOT_ONLY, "root");
-  assert.equal(process.env.CONFIG_CLIENT_ONLY, undefined);
-  assert.equal(process.env.CONFIG_PROCESS, "process", "process env must beat env files");
-  assert.equal(process.env.CONFIG_MODE, mode);
-  assert.equal(process.env.CONFIG_LOCAL, mode + "-local");
-  assert.equal(process.env.CONFIG_EXPANDED, "root/expanded");
-  assert.equal(config.distDir, development ? ".next-dev" : ".next");
+  if (testing) {
+    assert.equal(process.env.CONFIG_SHARED, undefined);
+    assert.equal(process.env.CONFIG_CLIENT_ONLY, undefined);
+    assert.equal(process.env.CONFIG_ROOT_ONLY, undefined);
+    assert.equal(process.env.NEXT_PUBLIC_API_URL, "http://127.0.0.1:8100/api/v1");
+    assert.equal(config.distDir, ".next-test");
+  } else {
+    assert.equal(process.env.CONFIG_SHARED, "root", "root env must replace cached client env");
+    assert.equal(process.env.CONFIG_ROOT_ONLY, "root");
+    assert.equal(process.env.CONFIG_CLIENT_ONLY, undefined);
+    assert.equal(process.env.CONFIG_PROCESS, "process", "process env must beat env files");
+    assert.equal(process.env.CONFIG_MODE, mode);
+    assert.equal(process.env.CONFIG_LOCAL, mode + "-local");
+    assert.equal(process.env.CONFIG_EXPANDED, "root/expanded");
+    assert.equal(config.distDir, development ? ".next-dev" : ".next");
+  }
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }
 `;
 
 describe("Next config root environment", () => {
+  it("excludes generated test builds from lint", async () => {
+    const eslint = new ESLint({ cwd: __dirname });
+    if (!(await eslint.isPathIgnored(path.resolve(__dirname, ".next-test/server/app/page.js")))) {
+      throw new Error("Generated test builds must be ignored by ESLint");
+    }
+  });
   it.each([
     ["phase-development-server", "development"],
     ["phase-production-build", "production"],
@@ -69,6 +85,15 @@ describe("Next config root environment", () => {
         NODE_ENV: nodeEnv,
         CONFIG_PROCESS: "process",
         ...(process.env.TMPDIR ? { TMPDIR: process.env.TMPDIR } : {}),
+      },
+      stdio: "pipe",
+    });
+  });
+  it.each(["phase-production-build", "phase-production-server"])("isolates test config during %s", (phase) => {
+    execFileSync(process.execPath, ["-e", checkConfig, path.resolve(__dirname, "next.config.ts"), phase, "test"], {
+      env: {
+        NODE_ENV: "production", SHOP_TEST_MODE: "1", CONFIG_PROCESS: "process",
+        NEXT_PUBLIC_API_URL: "http://127.0.0.1:8100/api/v1",
       },
       stdio: "pipe",
     });

@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -17,7 +18,8 @@ env = environ.Env(
     CELERY_RESULT_BACKEND=(str, "redis://localhost:6379/1"),
 )
 
-environ.Env.read_env(BASE_DIR.parent / ".env")
+if os.environ.get("DJANGO_SETTINGS_MODULE") != "config.test_settings":
+    environ.Env.read_env(BASE_DIR.parent / ".env")
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")

@@ -117,7 +117,10 @@ def test_sequential_requests_do_not_share_trace(spans):
     assert first.context.trace_id != second.context.trace_id
 
 
-def test_explicit_exporter_delivers_safe_protobuf_and_survives_outage(monkeypatch):
+def test_explicit_exporter_delivers_safe_protobuf_and_survives_outage(
+    monkeypatch,
+    allowed_network_ports,
+):
     import threading
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -136,6 +139,7 @@ def test_explicit_exporter_delivers_safe_protobuf_and_survives_outage(monkeypatc
             pass
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Receiver)
+    allowed_network_ports.add(server.server_port)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     monkeypatch.setattr(telemetry, "_provider", None)

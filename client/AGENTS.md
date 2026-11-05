@@ -7,7 +7,7 @@ Inherits [root rules](../AGENTS.md). Read [testing guide](../docs/development/te
 - `npm run dev` — Next.js Fast Refresh on :3000; `.next-dev` output.
 - `npm run build` / `npm run start` — production `.next`; separate port if dev also runs.
 - `npm run typecheck`, `npm run lint`, `npm run test`.
-- `npx playwright test` is planned after TASK-005 installation/configuration; not a working E2E suite yet.
+- From root, `npm run test:e2e` starts isolated services/API and builds `.next-test` for Playwright smoke tests; see the testing guide for browser installation.
 
 ## UI and API boundaries
 

@@ -78,3 +78,6 @@ rabbitmq_data/
 playwright-report/
 test-results/
 *.junit.xml
+
+# Isolated browser build
+.next-test/
