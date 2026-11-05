@@ -1,11 +1,12 @@
 export const roles = ["SUPERADMIN", "PRODUCT_MANAGER", "OPERATOR", "AUDITOR", "CUSTOMER"] as const;
 export type Role = typeof roles[number];
-export type User = { id: string; phone: string; role: Role; is_active: boolean; is_deleted: boolean; created_at: string };
+export type User = { id: string; phone: string; first_name: string; last_name: string; role: Role; is_active: boolean; is_deleted: boolean; created_at: string; permissions?: string[] };
 export const apiBase = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000/api/v1";
 
 export function parseUser(value: unknown): User {
   const user = value as Partial<User> | null;
-  if (!user || typeof user.id !== "string" || typeof user.phone !== "string" || !roles.includes(user.role as Role)
+  if (!user || typeof user.id !== "string" || typeof user.phone !== "string" || typeof user.first_name !== "string" || typeof user.last_name !== "string" || !roles.includes(user.role as Role)
+    || (user.permissions !== undefined && (!Array.isArray(user.permissions) || user.permissions.some(code => typeof code !== "string")))
     || typeof user.is_active !== "boolean" || typeof user.is_deleted !== "boolean" || typeof user.created_at !== "string") {
     throw new Error("Invalid user response.");
   }
@@ -48,4 +49,12 @@ export async function api(path: string, method = "GET", data?: unknown): Promise
     throw new Error(detail);
   }
   return response.status === 204 ? null : response.json();
+}
+
+
+export function canManageIdentity(user: User, permission = "view_user"): boolean {
+  if (!user.is_active || user.is_deleted || user.role === "CUSTOMER") return false;
+  if (user.role === "SUPERADMIN") return true;
+  if (user.role === "AUDITOR" && permission !== "view_user") return false;
+  return Boolean(user.permissions?.includes("view_user") && user.permissions.includes(permission));
 }

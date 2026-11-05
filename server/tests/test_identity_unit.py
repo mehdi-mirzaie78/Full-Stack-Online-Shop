@@ -30,3 +30,28 @@ def test_migration_refuses_to_orphan_legacy_accounts():
     migration.require_empty_legacy_users(None, editor)
     editor.connection.introspection.table_names.return_value = []
     migration.require_empty_legacy_users(None, editor)
+
+
+@pytest.mark.parametrize(
+    "role,superuser,active,deleted,expected",
+    [
+        ("SUPERADMIN", True, True, False, True),
+        ("SUPERADMIN", False, True, False, False),
+        ("SUPERADMIN", True, False, False, False),
+        ("SUPERADMIN", True, True, True, False),
+        ("AUDITOR", False, True, False, False),
+        ("CUSTOMER", False, True, False, False),
+    ],
+)
+def test_superadmin_boundary(role, superuser, active, deleted, expected):
+    from rest_framework.exceptions import PermissionDenied
+
+    from apps.identity.access import require_superadmin
+    from apps.identity.models import User
+
+    actor = User(role=role, is_superuser=superuser, is_active=active, is_deleted=deleted)
+    if expected:
+        require_superadmin(actor)
+    else:
+        with pytest.raises(PermissionDenied):
+            require_superadmin(actor)

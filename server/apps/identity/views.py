@@ -16,9 +16,16 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import otp, services, tokens
+from . import access, otp, services, tokens
 from .models import LoginSession, User
-from .serializers import CodeInput, PasswordInput, PhoneInput, SessionSerializer, UserSerializer
+from .serializers import (
+    CodeInput,
+    PasswordInput,
+    PermissionInput,
+    PhoneInput,
+    SessionSerializer,
+    UserSerializer,
+)
 
 
 def cookie_response(pair: tuple[str, str]) -> Response:
@@ -145,7 +152,7 @@ class UsersView(IdentityView):
         )
 
     def post(self, request):
-        services.require_user_management(request.user, write=True)
+        access.require_capability(request.user, "add_user")
         return self.save(request)
 
     def save(self, request, identifier=None):
@@ -174,7 +181,7 @@ class UserDetailView(UsersView):
         return Response(status=405)
 
     def patch(self, request, identifier):
-        services.require_user_management(request.user, write=True)
+        access.require_capability(request.user, "change_user")
         get_object_or_404(User.all_objects, pk=identifier)
         return self.save(request, identifier)
 
@@ -183,8 +190,51 @@ class RevokeSessionView(IdentityView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, identifier):
-        services.require_user_management(request.user, write=True)
+        access.require_capability(request.user, "revoke_loginsession")
         services.revoke_session(
             request.user, get_object_or_404(LoginSession.objects, pk=identifier)
         )
         return Response(status=204)
+
+
+class AccessCatalogView(IdentityView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        access.require_superadmin(request.user)
+        return Response(access.access_catalog())
+
+
+class RolePermissionsView(IdentityView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, role):
+        access.require_superadmin(request.user)
+        serializer = PermissionInput(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        access.replace_permissions(
+            request.user, data["permissions"], data["expected_permissions"], role=role
+        )
+        return Response(access.access_catalog())
+
+
+class UserPermissionsView(IdentityView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, identifier):
+        access.require_superadmin(request.user)
+        return Response(
+            access.inspect_user_permissions(get_object_or_404(User.all_objects, pk=identifier))
+        )
+
+    def patch(self, request, identifier):
+        access.require_superadmin(request.user)
+        user = get_object_or_404(User.all_objects, pk=identifier)
+        serializer = PermissionInput(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        access.replace_permissions(
+            request.user, data["permissions"], data["expected_permissions"], user_id=user.pk
+        )
+        return Response(access.inspect_user_permissions(User.all_objects.get(pk=identifier)))

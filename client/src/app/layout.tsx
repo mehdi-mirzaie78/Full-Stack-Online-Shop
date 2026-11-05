@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Navbar } from "@/components/navbar";
+import { SiteFrame } from "@/components/site-frame";
 import { IdentityLanguage } from "@/components/identity/language";
 
 const vazirmatn = localFont({
@@ -36,11 +36,7 @@ export default function RootLayout({
     <html lang={defaultLang} dir={defaultDir} className={`dark ${vazirmatn.variable} ${manrope.variable}`}>
       <body className="min-h-screen bg-background text-foreground cyber-grid">
         <IdentityLanguage>
-        <Navbar />
-
-        <main className="container mx-auto px-4 py-8">
-          {children}
-        </main>
+        <SiteFrame>{children}</SiteFrame>
         </IdentityLanguage>
       </body>
     </html>

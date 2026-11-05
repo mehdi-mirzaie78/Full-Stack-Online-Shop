@@ -3,11 +3,11 @@ import { api, parseUser } from "./api";
 
 beforeEach(() => vi.stubGlobal("navigator", undefined));
 afterEach(() => vi.unstubAllGlobals());
-const user = { id: "id", phone: "+989121234567", role: "CUSTOMER", is_active: true, is_deleted: false, created_at: "now" };
+const user = { id: "id", phone: "+989121234567", first_name: "Test", last_name: "Customer", role: "CUSTOMER", is_active: true, is_deleted: false, created_at: "now" };
 describe("identity response boundaries", () => {
   it("rejects malformed user and role projections", () => {
     expect(parseUser(user)).toEqual(user);
-    for (const body of [null, {}, { ...user, role: "OWNER" }, { ...user, is_active: "true" }]) {
+    for (const body of [null, {}, { ...user, role: "OWNER" }, { ...user, is_active: "true" }, { ...user, first_name: null }, { ...user, last_name: 42 }]) {
       expect(() => parseUser(body)).toThrow("Invalid user response");
     }
   });
@@ -46,4 +46,15 @@ it("rechecks cookies inside the browser lock before rotating another tab's sessi
   expect(await api("auth/me")).toEqual(user);
   expect(request).toHaveBeenCalledOnce();
   expect(fetcher.mock.calls.every(([url]) => String(url).endsWith("/auth/me"))).toBe(true);
+});
+
+it("mirrors capability checks while retaining role ceilings", async () => {
+  const { canManageIdentity } = await import("./api");
+  const operator = parseUser({ ...user, role: "OPERATOR", permissions: ["view_user", "change_user"] });
+  expect(canManageIdentity(operator, "change_user")).toBe(true);
+  expect(canManageIdentity(operator, "add_user")).toBe(false);
+  expect(canManageIdentity({ ...operator, role: "AUDITOR" }, "change_user")).toBe(false);
+  expect(canManageIdentity({ ...operator, role: "CUSTOMER" })).toBe(false);
+  expect(canManageIdentity({ ...operator, is_active: false })).toBe(false);
+  expect(() => parseUser({ ...user, permissions: [42] })).toThrow("Invalid user response");
 });

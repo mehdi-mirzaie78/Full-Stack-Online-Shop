@@ -41,6 +41,20 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         validators=[phone_validator],
         help_text=_("International number with country code."),
     )
+    first_name = models.CharField(
+        _("First name"),
+        max_length=150,
+        blank=True,
+        default="",
+        help_text=_("Given name; required when staff create an account."),
+    )
+    last_name = models.CharField(
+        _("Last name"),
+        max_length=150,
+        blank=True,
+        default="",
+        help_text=_("Family name; required when staff create an account."),
+    )
     role = models.CharField(
         _("Role"),
         max_length=20,
@@ -50,7 +64,7 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     )
     objects = UserManager()
     USERNAME_FIELD = "phone"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ["first_name", "last_name"]
 
     def revoke_sessions(self) -> None:
         LoginSession.all_objects.filter(user=self, revoked_at__isnull=True).update(
@@ -69,6 +83,7 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     class Meta(BaseModel.Meta):
         verbose_name = _("User")
         verbose_name_plural = _("Users")
+        permissions = [("revoke_loginsession", _("Can revoke customer login sessions"))]
         constraints = [
             models.CheckConstraint(
                 condition=(

@@ -33,6 +33,8 @@ def client():
 
 
 def post(client, path, data=None):
+    if path == "staff/users":
+        data = {"first_name": "Test", "last_name": "Customer", **(data or {})}
     csrf = client.get(BASE + "auth/csrf").json()["csrfToken"]
     return client.post(BASE + path, data or {}, format="json", HTTP_X_CSRFTOKEN=csrf)
 
