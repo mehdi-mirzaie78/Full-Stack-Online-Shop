@@ -67,7 +67,7 @@ cache, and S3 addresses, and overrides inherited service URLs. Pytest rejects de
 settings. Database fixtures use Django's isolated test DB; BaseModel rows use explicit
 example data and rollback between tests. S3 tests get a unique bucket with fixed object
 contents and remove its objects/bucket on teardown. The browser API uses only freshly
-migrated test data; the present storefront has no business entities to seed yet.
+migrated test data. The runner seeds synthetic identity users for the staff/OTP browser journeys.
 Future model slices must add deterministic factories and browser fixtures alongside
 the feature rather than seed real customer data.
 
@@ -77,15 +77,13 @@ checks block external hosts and service access from unit tests; integration test
 allow only the three local test ports. A telemetry unit test explicitly allows its
 own ephemeral receiver port. These Python socket checks do not sandbox subprocesses
 or native libraries. Keep provider credentials out of tests and stub those boundaries.
-Payment/SMS modules do not exist yet: add their fake adapters and outcome fixtures
-with their owning feature, before any real provider integration. No placeholder
+Payments do not exist yet: add their fake adapters and outcome fixtures with their owning feature. Identity now has a test-only SMS mailbox; normal delivery fails clearly unless DEBUG-only Redis delivery is explicitly enabled for manual testing; real SMS awaits provider selection. No placeholder
 payment/SMS framework is introduced by this harness.
 
 Test browser build/start discards cached client environment files and does not load
 root `.env`. The runner fixes public API/media URLs to the isolated services. Managed E2E
 always starts its own API and production Next server, refuses existing server reuse,
-and checks real API health. It currently proves storefront language switching,
-browser error privacy, and unsupported WebGL fallback—not purchase/auth journeys.
+and checks real API health. It proves staff/OTP identity journeys alongside storefront language switching, browser error privacy and unsupported WebGL fallback. Purchase journeys remain planned.
 
 Artifacts survive service cleanup: `server/server.junit.xml`, `server/coverage.xml`
 (full backend run), `test-results/api.log`, `client/playwright-report/`, and

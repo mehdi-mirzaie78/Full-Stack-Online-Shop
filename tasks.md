@@ -127,6 +127,10 @@ Work alongside business phases; this track does not replace catalog, auth, or ch
 
 ## Phase 1: Core Domain, Identity & Customer Module
 
+- [x] **TASK-IDENTITY-PASSWORD**: Shared rate-limited password/OTP login with CSRF and JWT cookies; private development-admin credentials created outside git; explicit Zod phone-length checks; shadcn Base UI navigation/button/input components with fixed navbar anchors and RTL direction provider; removed server status. Verified 88 backend tests, 31 frontend tests, 9 browser journeys including password sign-in and fixed navbar geometry, plus lint/types/build. Production dependency audit reports zero vulnerabilities. No commit/push.
+
+- [x] **TASK-IDENTITY-UX**: Development-only Redis OTP inspection (`dev_sms` command), automatic session recovery/redirects with no manual session button, shared navbar language toggle, Zod forms with native browser validation disabled, and identity page polish. Verified 86 backend tests / 92.46% runtime coverage, 30 client tests, 7 browser journeys, lint/types/build; visually inspected login screenshot. Also fixed the initial CSRF request race and test API port preflight for rapid reruns.
+
 Build TASK-501 after TASK-102/103 authentication and before delivering additional managed models. TASK-102 includes initial protected identity management APIs and staff screens; TASK-501 provides their shared shell. No unauthenticated temporary CRUD panel.
 
 - [ ] **TASK-108**: ShopSettings Singleton & Protected API (after TASK-102/103, TASK-501, TASK-005)
@@ -148,17 +152,20 @@ Build TASK-501 after TASK-102/103 authentication and before delivering additiona
   - [x] Implement `SoftDeleteManager` (`objects.all()` excludes soft-deleted records; `objects.all_with_deleted()` includes them)
   - [x] DB-backed integration tests for soft-delete, restore, and cascade behavior
 
-- [ ] **TASK-102**: Custom User & RBAC Model
-  - [ ] Create custom `User` model using phone number as unique identifier
-  - [ ] Add `Role` enum (`SUPERADMIN`, `PRODUCT_MANAGER`, `OPERATOR`, `AUDITOR`, `CUSTOMER`)
+- [/] **TASK-102**: Custom User & RBAC Model
+  - [x] First vertical slice: User/roles, protected staff operations, OTP/JWT sessions and minimal staff shell; customer profiles/addresses follow separately.
+  - [x] Create custom `User` model using phone number as unique identifier
+  - [x] Add `Role` enum (`SUPERADMIN`, `PRODUCT_MANAGER`, `OPERATOR`, `AUDITOR`, `CUSTOMER`)
   - [ ] Create `CustomerProfile` (avatar, national code, age, gender) and `Address` (province, city, 10-digit postal code, body)
-  - [ ] Model tests and migrations
+  - [x] User/LoginSession model tests, migration guard and migrations; profile/address models remain in the next slice
 
-- [ ] **TASK-103**: Redis-Backed OTP Engine & Sliding Rate Limiter
-  - [ ] Create `POST /api/v1/auth/otp/request` endpoint (generates 6-digit cryptographic code, 120s Redis TTL)
-  - [ ] Implement sliding window rate limit (max 3 requests per 10 minutes per IP/phone)
-  - [ ] Create `POST /api/v1/auth/otp/verify` endpoint (atomic verification, single-use invalidation)
-  - [ ] Issue JWT access + rotating refresh tokens
+- [x] **TASK-103**: Redis-Backed OTP Engine & Sliding Rate Limiter
+  - [x] Create `POST /api/v1/auth/otp/request` endpoint (generates 6-digit cryptographic code, 120s Redis TTL)
+  - [x] Implement sliding window rate limit (max 3 requests per 10 minutes per IP/phone)
+  - [x] Create `POST /api/v1/auth/otp/verify` endpoint (atomic verification, single-use invalidation)
+  - [x] Issue JWT access + rotating refresh tokens
+
+  - Delivery: fake SMS is enabled only by isolated test settings; normal OTP delivery returns 503 until a provider is selected. Verified 85 backend tests / 94.49% runtime coverage, 29 client tests, 9 runner/workflow regressions and 7 browser journeys (staff create/edit/archive/restore/logout, auditor read-only, customer denial, refresh recovery, mobile/keyboard and existing storefront smoke). Lint/types/test build, migration drift checks and local migrations passed; test resources cleaned up. No commit/push or hosted CI run for this slice.
 
 - [ ] **TASK-104**: Customer Profile & Address Management APIs
   - [ ] `GET / PUT /api/v1/customer/profile`
@@ -286,11 +293,11 @@ Build TASK-501 after TASK-102/103 authentication and before delivering additiona
 
 ## Phase 5: Custom Next.js Admin Panel (RBAC)
 
-- [ ] **TASK-501**: Admin Portal Shell & Authentication Guards
-  - [ ] Build alongside identity/auth in Phase 1, before additional model slices; Phase 5 completes specialist workflows, not initial CRUD
-  - [ ] Dedicated `/admin` route layout with sidebar navigation
-  - [ ] Server-side Next.js route checks and backend role/object permissions; middleware is supplemental, never sole authorization
-  - [ ] Controlled staff-account bootstrap, identity management screens, loading/error/empty states and keyboard/mobile navigation; no Django admin fallback
+- [x] **TASK-501**: Admin Portal Shell & Authentication Guards
+  - [x] Build alongside identity/auth in Phase 1, before additional model slices; Phase 5 completes specialist workflows, not initial CRUD
+  - [x] Dedicated `/admin` route layout with sidebar navigation
+  - [x] Server-side Next.js route checks and backend role/object permissions; middleware is supplemental, never sole authorization
+  - [x] Controlled staff-account bootstrap, identity management screens, loading/error/empty states and keyboard/mobile navigation; no Django admin fallback
 
 - [ ] **TASK-502**: Product Manager Dashboard
   - [ ] Product and category CRUD data table

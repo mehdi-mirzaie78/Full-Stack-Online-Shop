@@ -70,7 +70,11 @@ graph TD
 
 Develop new business features using pragmatic **DDD**: shared business language, explicit domain ownership, and rules enforced in models/policies rather than repeated in endpoints. Keep one modular Django backend; no microservices or extra repository layers required.
 
-Read [DDD guide and context map](./docs/domain-driven-design.md) for entities, value objects, aggregates, checkout transaction boundaries, worked learning steps, and task ownership. TASK-006 records this convention; TASK-007 resolves open business questions before catalog/checkout modeling. Domain apps are planned, not scaffolded or migrated yet.
+Read [DDD guide and context map](./docs/domain-driven-design.md) for entities, value objects, aggregates, checkout transaction boundaries, worked learning steps, and task ownership. TASK-006 records this convention; TASK-007 resolves open business questions before catalog/checkout modeling. The first identity slice is implemented; customer profiles/addresses and commerce domain apps remain planned. See [identity and staff access](./docs/development/identity.md).
+
+## Identity and staff access
+
+`/login` and protected `/admin/users` now provide phone-based authentication and role-controlled staff identity operations. Real SMS delivery is unconfigured; the isolated test harness supplies a fake sender. See the [identity contract](./docs/development/identity.md) for bootstrap, migration safeguards, cookie/CSRF behavior and verification.
 
 ## Custom admin and configurable shop
 

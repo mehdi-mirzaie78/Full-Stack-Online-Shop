@@ -59,4 +59,4 @@ About page is a later feature (TASK-110). Add localized title/body and publicati
 - Singleton constraints hold for concurrent/bulk creation, immutable singleton fields, and deletion/deactivation attempts. Test bootstrap and missing-row recovery procedure separately.
 - Authorization, field validation, stale-edit rejection and public allowlist verified with unit/integration checks.
 - E2E: authorized staff saves branding/landing/link changes; reload public page and verify text, links, images and metadata; unauthorized roles cannot write. Verify Persian/English, keyboard/mobile, API failure, and no secrets in public response.
-- Current state: Django admin disablement is small immediate cleanup; custom panel, ShopSettings table/migrations/API/editor and About remain pending tasks. No claim that dynamic branding works before TASK-108/109 pass.
+- Current state: Django admin is disabled; the protected staff shell and User/LoginSession operations are implemented (see [identity contract](./development/identity.md)). ShopSettings table/migrations/API/editor and About remain pending tasks. No claim that dynamic branding works before TASK-108/109 pass.
