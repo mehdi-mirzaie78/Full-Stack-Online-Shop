@@ -38,6 +38,7 @@ def test_environment() -> dict[str, str]:
     return {key: os.environ[key] for key in allowed if key in os.environ} | {
         "DJANGO_SETTINGS_MODULE": "config.test_settings",
         "SHOP_TEST_MODE": "1",
+        "TEST_PYTHON": PYTHON,
         "NEXT_TELEMETRY_DISABLED": "1",
         "OTEL_ENABLED": "false",
         "NEXT_PUBLIC_API_URL": "http://127.0.0.1:8100/api/v1",
@@ -100,8 +101,10 @@ def wait_for_backend(process: subprocess.Popen) -> None:
 def browser_tests() -> None:
     # Refuse to probe a server owned by another run or a developer.
     with socket.socket() as check:
+        check.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         check.bind(("127.0.0.1", 8100))
     run([PYTHON, "manage.py", "migrate", "--noinput"], cwd=SERVER)
+    run([PYTHON, "manage.py", "test_identity", "seed"], cwd=SERVER)
     run(["npm", "--prefix", "client", "run", "build"])
     reports = ROOT / "test-results"
     reports.mkdir(exist_ok=True)

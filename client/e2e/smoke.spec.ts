@@ -10,7 +10,7 @@ test("storefront renders and language control works", async ({ page, request }) 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "آزمایشگاه متریال" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-  await page.getByRole("button", { name: "تغییر جهت به چپ‌به‌راست (LTR)", exact: true }).click();
+  await page.getByRole("button", { name: "English", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Material lab", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
 });
