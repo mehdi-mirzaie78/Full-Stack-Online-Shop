@@ -1,0 +1,44 @@
+# Disposable services only. Never merge this file with development Compose files.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: shop_test
+      POSTGRES_USER: shop_test
+      POSTGRES_PASSWORD: test-only
+    ports:
+      - '127.0.0.1:55432:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U shop_test -d shop_test']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '127.0.0.1:56379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  storage:
+    image: chrislusf/seaweedfs@sha256:c2658820e763294a9e9de7b36c81e59b879e3459148351aee4e31a126ca64860
+    command: mini -dir=/data
+    environment:
+      AWS_ACCESS_KEY_ID: shop-test
+      AWS_SECRET_ACCESS_KEY: test-only
+      S3_BUCKET: shop-test-media
+    ports:
+      - '127.0.0.1:59000:8333'
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://localhost:9333/cluster/status']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 10s

@@ -14,3 +14,12 @@ def test_real_database_health():
 
 def test_real_redis_health():
     assert check_redis() == (True, "ok")
+
+
+def test_real_storage_round_trip(s3_bucket):
+    client, bucket = s3_bucket
+    client.put_object(Bucket=bucket, Key="fixture.txt", Body=b"repeatable-test-payload")
+    response = client.get_object(Bucket=bucket, Key="fixture.txt")
+    assert response["Body"].read() == b"repeatable-test-payload"
+    client.delete_object(Bucket=bucket, Key="fixture.txt")
+    assert client.list_objects_v2(Bucket=bucket)["KeyCount"] == 0

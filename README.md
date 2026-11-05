@@ -52,7 +52,7 @@ graph TD
 - **Caching & Locks**: Redis 7 (OTP keys with 120s TTL, sliding rate limiter, distributed checkout locks).
 - **Queue & Async Worker**: RabbitMQ 3.13 + Celery (Exponential backoff retries, Dead Letter Queue, scheduled Beat tasks).
 - **Storage**: S3-compatible (SeaweedFS dev, Cloudflare R2 / AWS S3 prod) with presigned direct uploads.
-- **Testing**: Pytest + Factory Boy for backend unit/integration tests; Vitest for client unit tests; Playwright planned for E2E browser automation.
+- **Testing**: Pytest + Factory Boy for backend unit/integration tests; Vitest for client unit tests; Playwright for browser smoke tests; business journeys follow their features.
 
 ---
 
@@ -103,12 +103,13 @@ All three layers are required; integration and E2E are not interchangeable. Add 
 Existing commands, from repository root:
 
 ```sh
-npm --prefix client run test
-(cd server && pytest -v --cov=.)
-npm run test
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:all
 ```
 
-Backend checks require installed Python dev dependencies and PostgreSQL test DB access; integration cases need their isolated services too. `npm run test` currently chains Vitest and Pytest, **not E2E**. Build client, then run `npm --prefix client run test:e2e` for production browser smoke; install Chromium first as documented in testing guide.
+The managed integration/E2E runners start and clean up dedicated test services; `test:all` runs every layer and enforces backend coverage. Tests ignore development environment files. Install Chromium first, or set `E2E_BROWSER_CHANNEL=chrome` to use installed Chrome. The legacy `npm run test` still chains Vitest and Pytest without E2E or service management. See the testing guide for prerequisites, focused runs, resource isolation, and artifacts.
 
 Required coverage, isolation rules, and release gates: [testing guide](./docs/development/testing.md), [REQUIREMENTS.md](./REQUIREMENTS.md#phase-7-quality-assurance-hardening--deployment), and TASK-005 / TASK-701 / TASK-702 / TASK-705 in [tasks.md](./tasks.md).
 
@@ -159,6 +160,39 @@ The former MinIO console on port 9001 is no longer provided.
 Next.js development uses `client/.next-dev`; production build/start uses
 `client/.next`. This prevents a development server from overwriting production
 chunks. Use separate ports when running both servers simultaneously.
+
+### Local development without application containers
+
+Use Node.js 22 LTS and Python 3.12 for the tested development toolchain,
+plus Docker with Compose for PostgreSQL, Redis, RabbitMQ, and S3 storage.
+The commands below use `uv` to install Python and manage backend dependencies.
+From the repository root, copy `.env.example` to `.env` only if `.env`
+does not already exist, then install the locked dependencies:
+
+```sh
+npm ci
+npm --prefix client ci
+uv venv --python 3.12 server/.venv
+uv pip install --python server/.venv/bin/python -r server/requirements-dev.lock
+npm run infra:up
+server/.venv/bin/python server/manage.py migrate
+npm run dev
+```
+
+The storefront is at http://localhost:3000 and API documentation at
+http://localhost:8000/api/docs/. Check database and cache readiness at
+`/api/health/db/` and `/api/health/redis/` on port 8000.
+For frontend-only work, `npm run dev:client` needs no running infrastructure.
+Activate `server/.venv` before using the root test/lint commands.
+If port 5432 is occupied, set `POSTGRES_PORT` to an unused port and update
+the port in `DATABASE_URL` to match before starting infrastructure.
+See the [testing guide](./docs/development/testing.md) for isolated integration
+services and browser checks.
+
+If Docker reports permission denied on `/var/run/docker.sock`, configure
+Docker access for your user and restart your login session, or run the
+Compose startup command with sudo in your terminal. Do not loosen socket
+permissions or delete existing data volumes.
 
 ### Daily development with Docker
 
@@ -211,7 +245,7 @@ stop containerized client/server first to avoid port conflicts.
 
 Container verification: 15 backend tests and 4 frontend tests passed; frontend
 typecheck/lint, all page CSS/JS requests, API DB/cache health, and source sync/reload
-for both applications passed. Browser E2E remains pending TASK-005. A temporary
+for both applications passed. Managed browser smoke is now available through `npm run test:e2e`; business journeys remain planned. A temporary
 local build-only DNS override was needed for files.pythonhosted.org; it is not
 part of project configuration. If future dependency builds fail resolving that
 host, repair local/Docker DNS before rebuilding.

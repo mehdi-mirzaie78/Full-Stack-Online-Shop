@@ -145,6 +145,21 @@ def readiness(urls):
     assert http(urls["grafana"] + "/api/health")["database"] == "ok"
 
 
+def pull_images(docker):
+    transient = ("502 Bad Gateway", "503 Service Unavailable", "504 Gateway Timeout",
+                 "500 Internal Server Error", "connection reset by peer", "TLS handshake timeout")
+    for attempt in range(3):
+        try:
+            print(docker("pull", "--policy", "missing"))
+            return
+        except AssertionError as error:
+            if attempt == 2 or not any(message in str(error) for message in transient):
+                raise
+            delay = 5 * (attempt + 1)
+            print(f"Transient registry failure; retrying image pull in {delay}s ({attempt + 1}/2)")
+            time.sleep(delay)
+
+
 def run_ci(keep):
     project = "shop-obs-smoke-" + uuid.uuid4().hex[:10]
     # Explicit env file bypasses automatic root .env loading. Never export caller credentials.
@@ -189,7 +204,8 @@ def run_ci(keep):
 
         try:
             docker("config", "--quiet")
-            print(docker("up", "-d"))
+            pull_images(docker)
+            print(docker("up", "-d", "--pull", "never"))
             readiness(urls)
             print(docker("run", "--rm", "--no-deps", "loki", "-config.file=/etc/loki/local.yml", "-verify-config=true"))
             print(docker("run", "--rm", "--no-deps", "--entrypoint", "promtool", "prometheus", "check", "config", "/etc/prometheus/prometheus.yml"))

@@ -4,12 +4,14 @@ import { loadEnvConfig } from "@next/env";
 import path from "node:path";
 
 const nextConfig = (phase: string): NextConfig => {
+  const testing = process.env.SHOP_TEST_MODE === "1";
   const development = phase === PHASE_DEVELOPMENT_SERVER;
   // Next already cached client env; reload root files from the original process env.
-  loadEnvConfig(path.resolve(__dirname, ".."), development, console, true);
+  // The infra directory has no env files; tests discard cached client/development values.
+  loadEnvConfig(path.resolve(__dirname, testing ? "../infra" : ".."), development, console, true);
 
   return {
-    distDir: development ? ".next-dev" : ".next",
+    distDir: testing ? ".next-test" : development ? ".next-dev" : ".next",
     reactStrictMode: true,
     images: {
       remotePatterns: [

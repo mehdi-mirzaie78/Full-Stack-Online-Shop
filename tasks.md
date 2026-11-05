@@ -12,6 +12,10 @@ Delivery rule: follow [layered instructions](./AGENTS.md) and [admin/settings co
 
 ## Phase 0: Project Scaffolding & Infrastructure Foundations
 
+- [x] **TASK-OBS-PULL-RETRY**: Pull missing digest-pinned images before telemetry startup; retry selected transient registry errors up to three attempts with 5s/10s delays. Permanent and exhausted failures remain fatal; startup uses `--pull never`. Nine script regressions and structural checks passed; full disposable telemetry smoke passed privacy, metrics, Grafana correlation and restart persistence, with cleanup. Hosted CI rerun remains unverified.
+
+- [x] **TASK-LOCAL-SETUP**: Installed root/client lockfiles and 69 locked backend packages in Python 3.12 virtualenv; configured ignored root environment, using PostgreSQL host port 55433 to avoid an existing service. Four infrastructure services healthy, migrations applied, no migration drift, storefront/API running, and DB/Redis health plus RabbitMQ/S3 authentication verified. Passed 46 backend tests against disposable PostgreSQL/Redis, 21 frontend tests, typecheck/lint/build, and 3 Chrome browser smoke tests with live API health probe. Installed upstream Ponytail skill in the user Codex skills directory. Downloads used the local HTTP proxy; Node 26 was available locally while CI targets Node 22. No commit/push.
+
 - [x] **TASK-OBS-CI**: Safe logging, correlation and five CI gates verified. Review fixes prevent Celery worker formatter bypass and trace-header leakage through redirects, with failing-then-passing regressions. Final local checks: 46 backend tests / 93.80% coverage; 21 client tests; 3 browser tests; lint/types/build; Django checks/migration drift; workflow contract and full disposable telemetry smoke including runtime Grafana correlation templates. Hosted Actions and branch protection remain owner follow-up after authorized push; no business checkout waterfall claimed.
 - [x] **TASK-OBS-LOCAL**: Optional private Docker Grafana/Loki/Tempo/Prometheus/Alloy stack, digest-pinned images, provisioned dashboards, retention and restricted socket proxy. Disposable full smoke passed Docker collection, log/trace privacy, existing route retention, metrics, dashboard queries and restart persistence; production-style setup still needs user-owned Grafana password file. Multi-day expiration and browser trace-link clicking not claimed.
 
@@ -51,13 +55,16 @@ Delivery rule: follow [layered instructions](./AGENTS.md) and [admin/settings co
   - [x] Self-host Vazirmatn and Manrope variable fonts with licenses; apply language-aware font stacks
   - [x] Refine heading spacing and UI typography; verify both languages, mobile layout, and client checks
 
-- [ ] **TASK-005**: Automated Test Harness & Isolated Test Environment
-  - [ ] Establish distinct unit, integration, and E2E discovery/commands; register Pytest markers and keep Vitest from collecting Playwright tests
-  - [ ] Add Playwright dependency, configuration, browser installation instructions, and first repeatable storefront smoke test
-  - [ ] Provide deterministic fixtures and isolated PostgreSQL test DB, Redis namespace/database, and test storage; never use SQLite or production resources
-  - [ ] Configure test-only payment/SMS/email adapters so tests cannot trigger real charges or sends
-  - [ ] Document service startup, seed/reset/cleanup, environment prerequisites, and failure artifacts
-  - [ ] Acceptance: each layer runs independently with meaningful assertions; unavailable dependencies fail clearly, not silently skip critical checks
+- [x] **TASK-005**: Automated Test Harness & Isolated Test Environment
+  - [x] Establish distinct unit, integration, and E2E discovery/commands; register Pytest markers and keep Vitest from collecting Playwright tests
+  - [x] Add Playwright dependency, configuration, browser installation instructions, and first repeatable storefront smoke test
+  - [x] Provide deterministic fixtures and isolated PostgreSQL test DB, Redis namespace/database, and test storage; never use SQLite or production resources
+  - [x] Prevent current tests from real delivery with in-memory email/Celery and outbound Python socket checks; payment/SMS fake adapters must ship with their first owning feature (those modules do not exist yet)
+  - [x] Document service startup, seed/reset/cleanup, environment prerequisites, and failure artifacts
+  - [x] Acceptance: each layer runs independently with meaningful assertions; unavailable dependencies fail clearly, not silently skip critical checks
+  - Verification: managed full run passed 57 backend tests / 93.80% runtime coverage, 24 frontend tests, 6 runner/workflow checks, and 3 Chrome browser tests against its own API. Unit, integration (9 tests), and E2E commands also passed independently; missing PostgreSQL failed clearly. Lint/types/build passed and test containers/network were removed; hosted Actions awaits authorized push.
+
+  - Review: fixed duplicate cleanup attempts when Docker is inaccessible and excluded generated `.next-test` output from ESLint, with failing-then-passing regressions. Full backend/browser checks and final client tests/lint/types pass.
 
 - [x] **TASK-006**: DDD Architecture & Shared Business Language
   - [x] Document bounded contexts, business vocabulary, invariants, transaction boundaries, and Django implementation rules in `docs/domain-driven-design.md`
