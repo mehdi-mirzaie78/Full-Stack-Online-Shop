@@ -4,7 +4,7 @@ Full relational and vector data schema for Full-Stack Online Shop, implemented w
 
 This is a target schema, not a list of completed migrations. Planned shop configuration follows [admin/settings contract](./docs/admin-and-shop-settings.md): one `ShopSettings` row per deployment, inherited UUID/timestamps, constant `singleton_key` enforced by CHECK + UNIQUE, bootstrap migration and no ordinary deletion/deactivation. TASK-108/109 deliver model/API/editor and settings-driven storefront; TASK-110 adds About later. Localized fixed fields and bounded validated link lists stay separate from catalog rules and secrets.
 
-User and LoginSession are implemented in the identity slice. LoginSession is revocable/inspectable through protected staff operations, not general CRUD. Customer profiles/addresses and other domain entities remain planned. See [identity contract](./docs/development/identity.md).
+User and LoginSession are implemented in the identity slice. Identity role grants reuse Django auth Group/Permission records (`identity-role:{ROLE}`); direct user grants reuse the existing User.user_permissions join table. User.role selects its role group, and identity.access enforces the role ceilings. No additional domain Role entity is introduced. LoginSession is revocable/inspectable through protected staff operations, not general CRUD. Customer profiles/addresses and other domain entities remain planned. See [identity contract](./docs/development/identity.md).
 
 ---
 
@@ -83,6 +83,8 @@ erDiagram
     User {
         uuid id PK
         string phone UK
+        string first_name "required on staff creation; legacy/OTP may be empty"
+        string last_name "required on staff creation; legacy/OTP may be empty"
         string hashed_password
         string role "SUPERADMIN | PRODUCT_MANAGER | OPERATOR | AUDITOR | CUSTOMER"
         boolean is_active

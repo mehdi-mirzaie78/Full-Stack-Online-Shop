@@ -83,7 +83,7 @@ payment/SMS framework is introduced by this harness.
 Test browser build/start discards cached client environment files and does not load
 root `.env`. The runner fixes public API/media URLs to the isolated services. Managed E2E
 always starts its own API and production Next server, refuses existing server reuse,
-and checks real API health. It proves staff/OTP identity journeys alongside storefront language switching, browser error privacy and unsupported WebGL fallback. Purchase journeys remain planned.
+and checks real API health. It proves password/OTP identity journeys, named user creation/editing, password and role/direct permission controls, tab/switch keyboard and RTL behavior, late-search response handling and draft preservation during session revocation, alongside storefront language switching, browser error privacy and unsupported WebGL fallback. Purchase journeys remain planned.
 
 Artifacts survive service cleanup: `server/server.junit.xml`, `server/coverage.xml`
 (full backend run), `test-results/api.log`, `client/playwright-report/`, and

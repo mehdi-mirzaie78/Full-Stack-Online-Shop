@@ -74,7 +74,7 @@ Read [DDD guide and context map](./docs/domain-driven-design.md) for entities, v
 
 ## Identity and staff access
 
-`/login` and protected `/admin/users` now provide phone-based authentication and role-controlled staff identity operations. Real SMS delivery is unconfigured; the isolated test harness supplies a fake sender. See the [identity contract](./docs/development/identity.md) for bootstrap, migration safeguards, cookie/CSRF behavior and verification.
+`/login` supports password and OTP authentication. The protected `/admin/users` workspace provides user names, account controls, password setting, and session revocation through a tabbed editor. Superadmins manage role grants at `/admin/permissions` and individual grants on user details; delegated staff can manage customer accounts within explicit capabilities, and auditors remain read-only. Both languages, light/dark appearance, mobile navigation, and keyboard controls are supported. Existing/OTP accounts can have names completed in admin; new staff-created accounts require first and last names. Real SMS delivery is unconfigured; the isolated test harness supplies a fake sender. See the [identity contract](./docs/development/identity.md) for the authoritative permissions, migration, password, and cookie/CSRF contracts.
 
 ## Custom admin and configurable shop
 
@@ -100,9 +100,9 @@ All three layers are required; integration and E2E are not interchangeable. Add 
 
 | Layer | Purpose / tools | Current repository status |
 | --- | --- | --- |
-| Unit | Isolated business logic with Pytest; client logic and Three.js scene behavior with Vitest | Client Three.js tests exist; broader domain coverage remains planned |
-| Integration | API/service boundaries, real PostgreSQL persistence/transactions and Redis behavior with Pytest + DRF APIClient | PostgreSQL BaseModel and real DB/Redis health checks exist; worker/storage and business API coverage remain planned |
-| E2E | User journeys in a real browser with Playwright against running client/API | Playwright storefront, browser-error and WebGL fallback smoke checks exist; business API journeys remain planned |
+| Unit | Isolated business logic with Pytest; client logic and Three.js scene behavior with Vitest | Identity validation/API boundaries, Three.js behavior, and backend security/telemetry tests exist; commerce-domain coverage follows its features |
+| Integration | API/service boundaries, real PostgreSQL persistence/transactions and Redis behavior with Pytest + DRF APIClient | PostgreSQL identity/BaseModel operations, permission/password enforcement, Redis OTP/rate limits, and S3 isolation are covered; real worker delivery remains planned |
+| E2E | User journeys in a real browser with Playwright against running client/API | Real API identity administration, password/OTP sign-in, role grants, tabs/switches, RTL/mobile/keyboard behavior, storefront and WebGL fallback are covered; purchase journeys remain planned |
 
 Existing commands, from repository root:
 
@@ -247,9 +247,9 @@ until background processing is needed.
 Local development remains available with `npm run infra:up` and `npm run dev`;
 stop containerized client/server first to avoid port conflicts.
 
-Container verification: 15 backend tests and 4 frontend tests passed; frontend
-typecheck/lint, all page CSS/JS requests, API DB/cache health, and source sync/reload
-for both applications passed. Managed browser smoke is now available through `npm run test:e2e`; business journeys remain planned. A temporary
+Container development checks cover frontend assets, API DB/cache health and source
+sync/reload for both applications. The latest complete suite results are recorded in
+[tasks.md](./tasks.md). Managed browser verification is available through `npm run test:e2e`; identity journeys are covered and purchase journeys remain planned. A temporary
 local build-only DNS override was needed for files.pythonhosted.org; it is not
 part of project configuration. If future dependency builds fail resolving that
 host, repair local/Docker DNS before rebuilding.

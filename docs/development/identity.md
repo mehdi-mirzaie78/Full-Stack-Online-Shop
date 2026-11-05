@@ -1,7 +1,8 @@
 # Identity and first staff operations
 
-Implemented: phone-based User/roles, Redis OTP, JWT cookie sessions, session revocation,
-`/login`, and the protected `/admin/users` list/detail/editor. CustomerProfile and
+Implemented: named phone-based users, role/direct identity capabilities, password and
+Redis OTP sign-in, JWT cookie sessions and revocation, `/login`, the protected
+`/admin/users` workspace, and `/admin/permissions`. CustomerProfile and
 Address are still planned under TASK-102/104/105; no catalog/checkout policies are
 introduced here.
 
@@ -111,11 +112,98 @@ hasher/authentication backend. Invalid, inactive and archived accounts get the s
 failure response. Password and OTP requests share the phone/IP attempt budget; CSRF,
 HTTP-only JWT cookies, rotation and revocation are identical for both methods.
 Passwords are never returned by the API. Staff accounts can be bootstrapped with
-`createsuperuser`; OTP-created accounts have unusable passwords until explicitly set
-through Django's protected management commands. There is no public password setter.
+`createsuperuser`; OTP-created accounts have unusable passwords until explicitly set by a superadmin in the protected staff editor or through Django’s management commands. There is no public password setter.
 
 The login form offers both methods and uses Zod character limits (9–16 total characters
 including `+`) plus international phone syntax. Native validation remains disabled.
 Navigation uses shadcn Base UI components and a direction provider for RTL interaction;
 the header's outer grid stays LTR so brand/language-control anchors do not swap sides.
 The previous server-status decoration has been removed.
+
+
+## Staff passwords and permission management
+
+`POST /api/v1/staff/users` and `PATCH /api/v1/staff/users/{id}` accept an optional,
+write-only `password` from an active SUPERADMIN whose Django `is_superuser` flag is
+also true. Omission preserves an existing password (or creates an unusable password);
+empty values are rejected. Passwords retain whitespace, have a 128-character maximum,
+and pass the configured Django password validators before hashing. No password/hash
+is serialized. Setting a password revokes all existing access/refresh sessions for the
+target, including the current session when editing oneself. The Next.js dialog/detail
+editor supplies confirmation locally; confirmation is never stored or sent to the API.
+
+Identity owns four assignable capability codenames: `view_user`, `add_user`,
+`change_user`, and `revoke_loginsession`. They are stored as Django auth Permission
+records on the identity User content type. Role grants use framework-owned Group
+records named `identity-role:{ROLE}`; individual additions use User.user_permissions.
+The business `User.role` selects the role group directly; arbitrary `User.groups`
+membership does not grant application access. `identity.access.effective_permissions`
+is the application authorization owner, evaluates current database grants without
+per-user permission caches, and supplies the read-only `permissions` user projection.
+This is distinct from Django ModelBackend's generic `has_perm` group lookup.
+
+- SUPERADMIN has fixed full identity access; only SUPERADMIN can assign staff roles,
+  change permissions, set passwords, or mutate staff accounts.
+- OPERATOR and PRODUCT_MANAGER start with no identity grants. A superadmin can grant
+  view plus create/edit/revoke capabilities directly or through their role.
+  Delegated mutations are restricted to CUSTOMER accounts and cannot assign staff roles.
+- AUDITOR starts with `view_user`. Its effective grants are always read-only, even
+  if an out-of-band auth record incorrectly grants a write capability.
+- CUSTOMER has no staff capabilities, regardless of direct auth records. Customer and
+  superadmin access is fixed. Individual grants are additive; clearing a direct grant
+  does not remove access inherited from a role. Every delegated write also needs view.
+
+The migration initializes role groups and the initial auditor view grant. It does not
+change any existing account passwords. Framework permission/group tables are reused;
+there is no new generic Role model or Django admin registration.
+
+Superadmin-only endpoints:
+
+| Method/path | Contract |
+| --- | --- |
+| `GET staff/access` | Supported capability catalog and all role grants |
+| `PATCH staff/roles/{ROLE}/permissions` | Replace an editable role's identity grants |
+| `GET staff/users/{id}/permissions` | Direct, inherited and effective grants plus role |
+| `PATCH staff/users/{id}/permissions` | Replace additional grants for an editable staff account |
+
+Permission PATCH bodies require `permissions` and `expected_permissions` arrays of
+supported, distinct codenames. Expected grants must match current stored grants;
+a stale edit returns 409 and changes nothing. Unknown capabilities, duplicates,
+unsupported roles and auditor writes are rejected. Unrelated Django permissions are
+preserved. All mutations retain cookie/CSRF enforcement, lock authorization changes
+with existing staff account mutations, and recheck the actor from the database inside
+the transaction. Role/direct changes affect the next authenticated request; the
+admin UI refreshes its permissions on navigation/reload.
+
+Next.js `/admin/permissions` manages role grants; each `/admin/users/{id}` offers
+additional individual grants and shows inherited/effective access. Password and
+permission controls are never available to delegated staff or auditors. These UI
+checks supplement API authorization and are not its security boundary.
+
+
+## User names and editing sections
+
+User owns `first_name` and `last_name` (up to 150 characters each). Staff account
+creation requires both fields; supplied values are trimmed and must not be blank.
+Staff PATCH supports partial updates: omitted names remain unchanged, while explicitly
+blank/overlong names are rejected. The application service repeats these requirements
+for non-HTTP callers. Next.js creation and account editing require both names and show
+the saved name in the users table. Django `createsuperuser` prompts for both names.
+
+Migration 0005 adds non-null name columns with empty defaults for existing rows. No
+names are invented or existing accounts disabled. Existing accounts with unknown names
+show “Name needed” in the list, and staff can complete their details. As explicitly
+selected for this slice, phone-only OTP registration/login remains unchanged, so OTP
+accounts may also need names completed later. Database fields permit these legacy/OTP
+empty values; staff creation validation supplies the stronger admin contract.
+
+User filtering ignores superseded responses so a slow earlier search cannot replace
+the current results. Session revocation refreshes session data without replacing
+unsaved account fields in another tab. An explicit account reload refreshes those
+fields from the API.
+
+The user detail editor has Account, Permissions (superadmin only), and Login sessions
+tabs. Hidden panels remain mounted so switching tabs preserves account and permission
+drafts. Tab controls use Base UI keyboard behavior and direction-aware navigation for
+Persian/English. Auditors can inspect Account/Login sessions with disabled account
+controls; API role/object authorization remains authoritative for every mutation.
